@@ -1,0 +1,159 @@
+/* src/index.css */
+
+/* Importing Google Fonts (Poppins) for a professional look */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+/* Tailwind's base styles */
+@tailwind base;
+
+/* Tailwind's component styles */
+@tailwind components;
+
+/* Tailwind's utility classes */
+@tailwind utilities;
+
+/* Base Layer Customizations */
+@layer base {
+  /* Global Font Settings */
+  body {
+    font-family: 'Poppins', sans-serif;
+    @apply bg-gray-100 text-gray-800 transition-colors duration-300;
+  }
+
+  /* Dark Mode Base Styles */
+  .dark body {
+    @apply bg-dark-bg text-dark-text;
+  }
+
+  /* Default styling for headers in both modes */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium dark:text-gray-100 transition-colors duration-300;
+  }
+
+  /* Link Styles */
+  a {
+    @apply text-primary transition-colors duration-300;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  /* Default styling for inputs in both light and dark modes */
+  input, select, textarea {
+    @apply bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors duration-300;
+  }
+}
+
+/* Components Layer */
+@layer components {
+  /* Button Styling Using Tailwind's @apply */
+  button {
+    @apply px-4 py-2 bg-blue-600 text-white rounded-lg transition-colors duration-300;
+  }
+  
+  button:hover {
+    @apply bg-blue-700 dark:bg-blue-800;
+  }
+
+  /* Card component for consistent styling */
+  .card {
+    @apply bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-lg shadow-lg p-4 transition-colors duration-300;
+  }
+
+  /* Custom shadow with dark mode support */
+  .shadow-lg {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .dark .shadow-lg {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* Calendar Component Dark Mode Support */
+/* Light mode styles (already in your CSS) */
+.react-calendar {
+  background-color: #f0f4f8; /* Light background */
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.react-calendar__tile {
+  background-color: #fff; /* Background color of the individual dates */
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.react-calendar__tile:hover {
+  background-color: #3b82f6; /* Blue background on hover */
+  color: #fff; /* White text on hover */
+}
+
+.react-calendar__tile--now {
+  background-color: #3b82f6; /* Highlight today's date with blue */
+  color: white;
+  font-weight: bold;
+}
+
+.react-calendar__tile--active {
+  background-color: #2563eb; /* Active tile background color */
+  color: white;
+}
+
+.react-calendar__month-view__weekdays {
+  background-color: #3b82f6; /* Blue background for the weekday labels */
+  color: white; /* White text for weekdays */
+  font-weight: bold;
+}
+
+/* Dark mode styles for calendar */
+.dark .react-calendar {
+  background-color: #2d3748; /* Dark background */
+  border: 1px solid #4a5568;
+}
+
+.dark .react-calendar__tile {
+  background-color: #1a202c; /* Dark mode tile background */
+  color: #e2e8f0; /* Light text for dark mode */
+}
+
+.dark .react-calendar__tile:hover {
+  background-color: #4299e1; /* Lighter blue on hover in dark mode */
+}
+
+.dark .react-calendar__tile--now {
+  background-color: #4299e1; /* Lighter blue for today in dark mode */
+}
+
+.dark .react-calendar__tile--active {
+  background-color: #3182ce; /* Active tile in dark mode */
+}
+
+.dark .react-calendar__month-view__weekdays {
+  background-color: #2b6cb0; /* Darker blue for weekdays in dark mode */
+}
+
+/* FontAwesome Icons Customization */
+i {
+  font-family: 'FontAwesome', sans-serif; /* Ensure FontAwesome icons work */
+}
+
+/* Custom Primary Colors */
+.bg-primary {
+  background-color: #3490dc; /* Primary blue */
+}
+
+.text-primary {
+  color: #3490dc; /* Primary blue text color */
+}
+
+/* Dark mode overrides for components */
+.dark .bg-primary {
+  background-color: #4299e1; /* Slightly lighter blue for dark mode */
+}
+
+.dark .text-primary {
+  color: #63b3ed; /* Lighter blue text for dark mode */
+}
