@@ -1,134 +1,145 @@
-import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from '../contexts/AuthContext';
 import {
-  FaSignOutAlt,
+  FaChartLine,
+  FaUsers,
+  FaUserPlus,
+  FaCloudUploadAlt,
+  FaUserMd,
   FaCog,
-  FaUser,
-  //FaPlus,
-  FaUpload,
-  FaMoon,
-  FaSun,
-  FaHome,
-  FaUserCog
+  FaSignOutAlt,
+  FaChevronLeft,
+  FaChevronRight,
+  FaLungs
 } from "react-icons/fa";
+import DarkModeToggle from './DarkModeToggle';
 
-function Navbar({ toggleDarkMode, isDarkMode, doctorName = "Smith" }) {
-  const navigate = useNavigate();
+function Navbar({ toggleDarkMode, isDarkMode, onCollapseChange, userRole }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { logout } = useAuth();
+  
+  // Notify parent component when collapse state changes
+  useEffect(() => {
+    if (onCollapseChange) {
+      onCollapseChange(isCollapsed);
+    }
+  }, [isCollapsed, onCollapseChange]);
+  
+  const navLinks = [
+    { to: '/doctordashboard', icon: <FaChartLine />, text: 'Dashboard' },
+    { to: '/patients', icon: <FaUsers />, text: 'Patients' },
+    { to: '/create-patient', icon: <FaUserPlus />, text: 'Create Patient' },
+    { to: '/upload-xray', icon: <FaCloudUploadAlt />, text: 'Upload X-ray' },
+    { to: '/profile', icon: <FaUserMd />, text: 'Profile' },
+    { to: '/settings', icon: <FaCog />, text: 'Settings' },
+  ];
 
-  const handleLogout = () => {
-    // Add logout logic here (e.g., clear session, tokens, etc.)
-    navigate("/login"); // Redirect to login page after logout
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
   };
 
-  // Determine if a nav item is active
-  const isActive = (path) => {
-    return location.pathname === path 
-      ? "border-l-4 border-blue-300 bg-blue-800 dark:bg-blue-900" 
-      : "";
+  // Determine the navbar width based on collapsed state
+  const navbarWidth = isCollapsed ? 'w-20' : 'w-64';
+  
+  // Light mode uses blue theme instead of white
+  const lightModeClasses = 'bg-blue-600 text-white';
+  const darkModeClasses = 'bg-gray-800 text-white';
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
-    <div className="fixed top-0 left-0 h-screen w-64 bg-blue-900 dark:bg-gray-900 text-gray-100 shadow-lg flex flex-col transition-colors duration-300">
-      {/* Logo and Doctor name */}
-      <div className="p-6 border-b border-blue-800 dark:border-gray-800">
-        <h1 className="text-xl font-medium mb-1 text-white">ChestCare</h1>
-        <p className="text-blue-200 dark:text-gray-300 text-sm font-light">Hello Dr. {doctorName}</p>
-      </div>
-
-      {/* Navigation Menu */}
-      <div className="flex-grow py-4 overflow-y-auto">
-        <div className="space-y-1">
-          <button
-            className={`flex items-center w-full px-6 py-3 hover:bg-blue-800 dark:hover:bg-gray-800 transition-colors duration-200 ${
-              isActive("/doctordashboard")
-            }`}
-            onClick={() => navigate("/doctordashboard")}
-          >
-            <FaHome className="mr-3 text-blue-300 dark:text-blue-400" />
-            <span className="font-light">Dashboard</span>
-          </button>
-
-          <button
-            className={`flex items-center w-full px-6 py-3 hover:bg-blue-800 dark:hover:bg-gray-800 transition-colors duration-200 ${
-              isActive("/patients")
-            }`}
-            onClick={() => navigate("/patients")}
-          >
-            <FaUser className="mr-3 text-blue-300 dark:text-blue-400" />
-            <span className="font-light">Patients</span>
-          </button>
-
-          <button
-            className={`flex items-center w-full px-6 py-3 hover:bg-blue-800 dark:hover:bg-gray-800 transition-colors duration-200 ${
-              isActive("/upload-xray")
-            }`}
-            onClick={() => navigate("/upload-xray")}
-          >
-            <FaUpload className="mr-3 text-blue-300 dark:text-blue-400" />
-            <span className="font-light">Upload X-ray</span>
-          </button>
-
-          <button
-            className={`flex items-center w-full px-6 py-3 hover:bg-blue-800 dark:hover:bg-gray-800 transition-colors duration-200 ${
-              isActive("/profile")
-            }`}
-            onClick={() => navigate("/profile")}
-          >
-            <FaUserCog className="mr-3 text-blue-300 dark:text-blue-400" />
-            <span className="font-light">Profile</span>
-          </button>
-
-          <button
-            className={`flex items-center w-full px-6 py-3 hover:bg-blue-800 dark:hover:bg-gray-800 transition-colors duration-200 ${
-              isActive("/settings")
-            }`}
-            onClick={() => navigate("/settings")}
-          >
-            <FaCog className="mr-3 text-blue-300 dark:text-blue-400" />
-            <span className="font-light">Settings</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Bottom Actions */}
-      <div className="p-4 border-t border-blue-800 dark:border-gray-800">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-sm text-blue-200 dark:text-gray-300 font-light">
-            {isDarkMode ? "Dark Mode" : "Light Mode"}
-          </span>
-          <button
-            onClick={toggleDarkMode}
-            className={`w-10 h-5 rounded-full p-0.5 transition-colors duration-200 ${
-              isDarkMode ? "bg-blue-600" : "bg-blue-700 dark:bg-gray-700"
-            }`}
-            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            <div
-              className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 flex items-center justify-center ${
-                isDarkMode ? "translate-x-5" : "translate-x-0"
-              }`}
-            >
-              {isDarkMode ? (
-                <FaMoon className="text-blue-700 text-xs" />
-              ) : (
-                <FaSun className="text-yellow-500 text-xs" />
-              )}
+    <div className={`fixed top-0 left-0 h-full ${navbarWidth} flex flex-col transition-all duration-300 ${isDarkMode ? darkModeClasses : lightModeClasses} shadow-lg z-50`}>
+      <div className={`p-5 border-b border-blue-700 dark:border-gray-700 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+        {!isCollapsed && (
+          <Link to="/doctordashboard" className="flex items-center">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white text-blue-600 dark:bg-blue-800 dark:text-blue-300 font-bold text-xl mr-3 shadow-md">
+              <FaLungs className="text-2xl" />
             </div>
+            <span className="text-xl font-bold text-white">ChestCare</span>
+          </Link>
+        )}
+        {isCollapsed && (
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white text-blue-600 dark:bg-blue-800 dark:text-blue-300 font-bold text-xl shadow-md">
+            <FaLungs className="text-2xl" />
+          </div>
+        )}
+        {!isCollapsed && (
+          <button 
+            onClick={toggleCollapse}
+            className="text-white hover:bg-blue-700 dark:hover:bg-gray-700 p-2 rounded-full"
+          >
+            <FaChevronLeft />
           </button>
-        </div>
-
-        <button
-          onClick={handleLogout}
-          className="flex items-center w-full px-4 py-2 bg-blue-800 dark:bg-gray-800 hover:bg-blue-700 dark:hover:bg-gray-700 transition-colors duration-200"
-        >
-          <FaSignOutAlt className="mr-3 text-blue-300 dark:text-blue-400" />
-          <span className="font-light">Logout</span>
-        </button>
+        )}
       </div>
+      
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
+        <ul className="space-y-2">
+          {navLinks.map((link) => (
+            <li key={link.to}>
+              <Link
+                to={link.to}
+                className={`flex items-center ${isCollapsed ? 'justify-center' : 'px-4'} py-3 rounded-lg transition-colors duration-200 ${
+                  location.pathname === link.to
+                    ? isDarkMode 
+                      ? 'bg-gray-700 text-blue-400' 
+                      : 'bg-blue-700 text-white'
+                    : isDarkMode
+                      ? 'text-gray-300 hover:bg-gray-700'
+                      : 'text-white hover:bg-blue-700'
+                }`}
+                title={isCollapsed ? link.text : ""}
+              >
+                <span className={`text-lg ${isCollapsed ? '' : 'mr-4'}`}>{link.icon}</span>
+                {!isCollapsed && <span>{link.text}</span>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      
+      {isCollapsed && (
+        <button 
+          onClick={toggleCollapse}
+          className="mx-auto my-4 text-white hover:bg-blue-700 dark:hover:bg-gray-700 p-2 rounded-full"
+        >
+          <FaChevronRight />
+        </button>
+      )}
+      
+      <div className={`p-4 border-t border-blue-700 dark:border-gray-700 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
+        {!isCollapsed && (
+          <button
+            onClick={handleLogout}
+            className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors duration-200
+              ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-white hover:bg-blue-700'}`}
+          >
+            <FaSignOutAlt className="text-lg mr-4" />
+            <span>Logout</span>
+          </button>
+        )}
 
-      {/* Add padding to ensure content isn't hidden behind navbar */}
-      <div className="w-64 flex-shrink-0"></div>
+        {isCollapsed && (
+          <button
+            onClick={handleLogout}
+            className={`flex items-center justify-center p-3 rounded-lg transition-colors duration-200 mb-4
+              ${isDarkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-white hover:bg-blue-700'}`}
+            title="Logout"
+          >
+            <FaSignOutAlt className="text-lg" />
+          </button>
+        )}
+
+        <div className={`${isCollapsed ? 'flex justify-center' : 'mt-4 flex justify-center'}`}>
+          <DarkModeToggle isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+        </div>
+      </div>
     </div>
   );
 }

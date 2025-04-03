@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 const UploadXrayPage = () => {
+  const { isDarkMode } = useDarkMode();
   const [currentStep, setCurrentStep] = useState("selectPatient");
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [image, setImage] = useState(null);
@@ -181,7 +183,7 @@ Diagnosis Probabilities:
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
       {fullScreen && image && (
         <motion.div 
           initial={{ opacity: 0 }}
@@ -218,7 +220,7 @@ Diagnosis Probabilities:
             initial={{ x: -20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="text-2xl font-semibold text-gray-800"
+            className={`text-2xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
           >
             X-Ray Diagnostic System
           </motion.h1>
@@ -235,14 +237,18 @@ Diagnosis Probabilities:
                     <motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: "2rem" }}
-                      className="h-1 bg-gray-200"
+                      className={`h-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}
                     ></motion.div>
                   )}
-                  <div className={`flex items-center ${isActive ? "text-blue-600" : "text-gray-500"}`}>
+                  <div className={`flex items-center ${isActive ? "text-blue-600" : isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
                     <motion.div 
                       animate={{
-                        backgroundColor: isActive ? "#2563EB" : "#E5E7EB",
-                        color: isActive ? "white" : "#6B7280"
+                        backgroundColor: isActive 
+                          ? "#2563EB" 
+                          : isDarkMode ? "#374151" : "#E5E7EB",
+                        color: isActive 
+                          ? "white" 
+                          : isDarkMode ? "#D1D5DB" : "#6B7280"
                       }}
                       whileHover={{ scale: 1.05 }}
                       className={`w-8 h-8 rounded-full flex items-center justify-center`}
@@ -286,12 +292,12 @@ Diagnosis Probabilities:
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="bg-white rounded-lg shadow-md p-6"
+              className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} rounded-lg shadow-md p-6`}
             >
               <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 space-y-2 md:space-y-0">
                 <motion.h2 
                   variants={itemVariants}
-                  className="text-xl font-semibold text-gray-800"
+                  className={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}
                 >
                   Select Patient
                 </motion.h2>
@@ -310,7 +316,7 @@ Diagnosis Probabilities:
                     whileFocus={{ boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.2)" }}
                     type="text"
                     placeholder="Search patients by name or ID..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className={`pl-10 pr-4 py-2 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-400' : 'border-gray-300 bg-white text-gray-700'} rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -331,19 +337,19 @@ Diagnosis Probabilities:
               
               <motion.div 
                 variants={itemVariants}
-                className="border rounded-md overflow-hidden"
+                className={`border rounded-md overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
               >
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>ID</th>
+                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Name</th>
+                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Age</th>
+                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Gender</th>
+                      <th scope="col" className={`px-6 py-3 text-right text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Action</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                     <AnimatePresence>
                       {filteredPatients.length > 0 ? (
                         filteredPatients.map((patient, index) => (
@@ -353,12 +359,12 @@ Diagnosis Probabilities:
                             variants={tableRowVariants}
                             initial={animatePatientList ? "hidden" : "visible"}
                             animate="visible"
-                            className="hover:bg-gray-50"
+                            className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
                           >
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{patient.id}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.name}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.age}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{patient.gender}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{patient.id}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.name}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.age}</td>
+                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.gender}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <motion.button
                                 whileHover={{ scale: 1.05 }}
@@ -376,7 +382,7 @@ Diagnosis Probabilities:
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                         >
-                          <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                          <td colSpan="5" className={`px-6 py-4 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                             No patients found matching "{searchQuery}"
                           </td>
                         </motion.tr>
@@ -400,9 +406,9 @@ Diagnosis Probabilities:
             >
               <motion.div 
                 variants={itemVariants}
-                className="lg:col-span-1 bg-white rounded-lg shadow-md p-6"
+                className={`lg:col-span-1 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6`}
               >
-                <h2 className="text-xl font-semibold mb-4 text-gray-800">Patient Information</h2>
+                <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Patient Information</h2>
                 <div className="space-y-3">
                   {[
                     { label: "Patient ID:", value: selectedPatient.id },
@@ -415,10 +421,10 @@ Diagnosis Probabilities:
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1, duration: 0.3 }}
-                      className="flex justify-between border-b pb-2"
+                      className={`flex justify-between border-b pb-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
                     >
-                      <span className="text-gray-600">{item.label}</span>
-                      <span className="font-medium">{item.value}</span>
+                      <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.label}</span>
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{item.value}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -426,19 +432,19 @@ Diagnosis Probabilities:
               
               <motion.div 
                 variants={itemVariants}
-                className="lg:col-span-2 bg-white rounded-lg shadow-md p-6"
+                className={`lg:col-span-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6`}
               >
-                <h2 className="text-xl font-semibold mb-4 text-gray-800">Upload X-ray for {selectedPatient.name}</h2>
+                <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Upload X-ray for {selectedPatient.name}</h2>
                 <form onSubmit={handleSubmit}>
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
                       Select X-ray Image
                     </label>
                     <div className="flex items-center">
                       <motion.label 
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        className="cursor-pointer bg-blue-50 text-blue-600 px-4 py-2 border border-blue-300 rounded-l-md hover:bg-blue-100 focus:outline-none"
+                        className={`cursor-pointer ${isDarkMode ? 'bg-blue-900 text-blue-300 border-blue-800' : 'bg-blue-50 text-blue-600 border-blue-300'} px-4 py-2 border rounded-l-md ${isDarkMode ? 'hover:bg-blue-800' : 'hover:bg-blue-100'} focus:outline-none`}
                       >
                         <span>Browse Files</span>
                         <input
@@ -448,7 +454,7 @@ Diagnosis Probabilities:
                           className="hidden"
                         />
                       </motion.label>
-                      <div className="flex-grow px-3 py-2 border border-l-0 border-gray-300 rounded-r-md bg-white text-sm truncate">
+                      <div className={`flex-grow px-3 py-2 border border-l-0 ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-gray-600'} rounded-r-md text-sm truncate`}>
                         {image ? "Image selected" : "No file selected"}
                       </div>
                     </div>
@@ -458,7 +464,7 @@ Diagnosis Probabilities:
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
-                          className="mt-2 text-sm text-red-600"
+                          className="mt-2 text-sm text-red-600 dark:text-red-400"
                         >
                           {error}
                         </motion.p>
@@ -473,7 +479,7 @@ Diagnosis Probabilities:
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                         transition={{ duration: 0.4 }}
-                        className="mb-4 border rounded-md overflow-hidden"
+                        className={`mb-4 border rounded-md overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
                       >
                         <div className="relative group">
                           <img 
@@ -503,7 +509,7 @@ Diagnosis Probabilities:
                             </motion.button>
                           </motion.div>
                         </div>
-                        <div className="bg-gray-100 py-2 px-3 text-sm text-center text-gray-700">
+                        <div className={`${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'} py-2 px-3 text-sm text-center`}>
                           Click to view full screen
                         </div>
                       </motion.div>
@@ -516,7 +522,7 @@ Diagnosis Probabilities:
                     type="submit"
                     disabled={loading || !image}
                     className={`w-full py-3 px-4 rounded-md text-white font-medium text-base ${
-                      loading || !image ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-md"
+                      loading || !image ? "bg-blue-400 dark:bg-blue-500/50 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-md"
                     }`}
                   >
                     {loading ? (
@@ -546,10 +552,10 @@ Diagnosis Probabilities:
             >
               <motion.div 
                 variants={itemVariants}
-                className="lg:col-span-1 bg-white rounded-lg shadow-md p-6"
+                className={`lg:col-span-1 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6`}
               >
                 <div className="mb-4 flex justify-between items-center">
-                  <h2 className="text-lg font-semibold text-gray-800">Patient Information</h2>
+                  <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Patient Information</h2>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -576,10 +582,10 @@ Diagnosis Probabilities:
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1, duration: 0.3 }}
-                      className="flex justify-between border-b pb-2"
+                      className={`flex justify-between border-b pb-2 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
                     >
-                      <span className="text-gray-600">{item.label}</span>
-                      <span className="font-medium">{item.value}</span>
+                      <span className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.label}</span>
+                      <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{item.value}</span>
                     </motion.div>
                   ))}
                 </div>
@@ -589,7 +595,7 @@ Diagnosis Probabilities:
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.4 }}
-                    className="border rounded-md overflow-hidden"
+                    className={`border rounded-md overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
                   >
                     <div className="relative group">
                       <img 
@@ -619,7 +625,7 @@ Diagnosis Probabilities:
                         </motion.button>
                       </motion.div>
                     </div>
-                    <div className="bg-gray-100 py-2 px-3 text-sm text-center text-gray-700">
+                    <div className={`${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'} py-2 px-3 text-sm text-center`}>
                       Click to view full screen
                     </div>
                   </motion.div>
@@ -628,9 +634,9 @@ Diagnosis Probabilities:
               
               <motion.div 
                 variants={itemVariants}
-                className="lg:col-span-2 bg-white rounded-lg shadow-md p-6"
+                className={`lg:col-span-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6`}
               >
-                <h2 className="text-xl font-semibold mb-4 text-gray-800">Analysis Results</h2>
+                <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Analysis Results</h2>
                 
                 {loading ? (
                   <motion.div 
@@ -638,12 +644,12 @@ Diagnosis Probabilities:
                     animate={{ opacity: 1 }}
                     className="py-12 flex flex-col items-center"
                   >
-                    <svg className="animate-spin mb-4 h-10 w-10 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className={`animate-spin mb-4 h-10 w-10 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="text-lg text-gray-600">Analyzing X-ray image...</p>
-                    <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
+                    <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Analyzing X-ray image...</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2`}>This may take a few moments</p>
                   </motion.div>
                 ) : results ? (
                   <motion.div 
@@ -652,12 +658,21 @@ Diagnosis Probabilities:
                     className="space-y-6"
                   >
                     <div>
-                      <h3 className="text-lg font-medium text-gray-700 mb-3">Diagnosis Probabilities</h3>
+                      <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} mb-3`}>Diagnosis Probabilities</h3>
                       <div className="space-y-4">
                         {Object.entries(results.predictions).map(([condition, probability], index) => {
                           const percent = probability * 100;
                           const riskLevel = getRiskLevel(probability);
-                          const colorClass = getRiskColorClass(probability);
+                          // Adjusted color classes for dark mode
+                          let colorClass = '';
+                          if (isDarkMode) {
+                            if (probability < 0.2) colorClass = "bg-green-900/50 text-green-300";
+                            else if (probability < 0.5) colorClass = "bg-yellow-900/50 text-yellow-300";
+                            else colorClass = "bg-red-900/50 text-red-300";
+                          } else {
+                            colorClass = getRiskColorClass(probability);
+                          }
+                          
                           const formattedCondition = condition
                             .replace(/([A-Z])/g, ' $1')
                             .replace(/^./, str => str.toUpperCase());
@@ -669,10 +684,10 @@ Diagnosis Probabilities:
                               animate="visible"
                               custom={index}
                               transition={{ delay: index * 0.2 }}
-                              className="border rounded-md p-4"
+                              className={`border rounded-md p-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
                             >
                               <div className="flex justify-between items-center mb-2">
-                                <span className="font-medium text-gray-800">{formattedCondition}</span>
+                                <span className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{formattedCondition}</span>
                                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${colorClass}`}>
                                   {riskLevel} Risk
                                 </span>
@@ -680,23 +695,23 @@ Diagnosis Probabilities:
                               <div className="relative pt-1">
                                 <div className="flex items-center justify-between mb-1">
                                   <div>
-                                    <span className="text-xs font-semibold inline-block text-blue-600">
+                                    <span className={`text-xs font-semibold inline-block ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                                       Probability
                                     </span>
                                   </div>
                                   <div className="text-right">
-                                    <span className="text-xs font-semibold inline-block text-blue-600">
+                                    <span className={`text-xs font-semibold inline-block ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                                       {percent.toFixed(1)}%
                                     </span>
                                   </div>
                                 </div>
-                                <div className="overflow-hidden h-2 text-xs flex rounded bg-blue-200">
+                                <div className={`overflow-hidden h-2 text-xs flex rounded ${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-200'}`}>
                                   <motion.div
                                     initial="hidden"
                                     animate="visible"
                                     custom={percent}
                                     variants={progressVariants}
-                                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-600"
+                                    className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${isDarkMode ? 'bg-blue-500' : 'bg-blue-600'}`}
                                   ></motion.div>
                                 </div>
                               </div>
@@ -710,15 +725,15 @@ Diagnosis Probabilities:
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.8 }}
-                      className="bg-blue-50 p-4 rounded-md border border-blue-200"
+                      className={`${isDarkMode ? 'bg-blue-900/20 border-blue-800/50 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'} p-4 rounded-md border`}
                     >
-                      <h3 className="text-lg font-medium text-blue-800 mb-2">Recommendations</h3>
-                      <p className="text-blue-700">
+                      <h3 className={`text-lg font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-800'} mb-2`}>Recommendations</h3>
+                      <p>
                         Based on the analysis, this patient should be evaluated by a specialist 
                         for further diagnosis and treatment planning. The X-ray shows potential 
                         indicators that require professional review.
                       </p>
-                      <p className="text-sm text-blue-600 mt-2 italic">
+                      <p className={`text-sm ${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mt-2 italic`}>
                         Note: This AI analysis is meant to assist medical professionals and should not 
                         replace clinical judgment.
                       </p>
@@ -728,7 +743,7 @@ Diagnosis Probabilities:
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="py-12 text-center text-gray-500"
+                    className={`py-12 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
                   >
                     Please upload an X-ray image for analysis
                   </motion.div>

@@ -6,11 +6,13 @@ function SettingsPage() {
   const [language, setLanguage] = useState("en");
 
   return (
-    <div className="min-h-screen p-8 bg-gray-100 text-gray-900">
+    <div className="min-h-screen p-8 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <h1 className="text-3xl font-bold mb-8">Settings</h1>
 
-      <div className="max-w-2xl bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4 border-b pb-2">Notification Settings</h2>
+      <div className="max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">
+          Notification Settings
+        </h2>
         
         <div className="mb-4">
           <div className="flex items-center justify-between">
@@ -25,7 +27,7 @@ function SettingsPage() {
               />
               <span 
                 className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${
-                  notifications ? 'bg-blue-600' : 'bg-gray-300'
+                  notifications ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
               ></span>
               <span 
@@ -50,7 +52,7 @@ function SettingsPage() {
               />
               <span 
                 className={`absolute cursor-pointer top-0 left-0 right-0 bottom-0 rounded-full transition-all duration-300 ${
-                  autoSave ? 'bg-blue-600' : 'bg-gray-300'
+                  autoSave ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
                 }`}
               ></span>
               <span 
@@ -63,16 +65,16 @@ function SettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4 border-b pb-2">Application Settings</h2>
+      <div className="max-w-2xl bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">Application Settings</h2>
         
         <div className="mb-4">
-          <label htmlFor="language" className="text-lg block mb-2">Language</label>
+          <label htmlFor="language" className="block text-lg mb-2">Language</label>
           <select
             id="language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
           >
             <option value="en">English</option>
             <option value="es">Spanish</option>
@@ -83,7 +85,7 @@ function SettingsPage() {
       </div>
 
       <div className="max-w-2xl flex justify-end mt-8">
-        <button className="bg-gray-300 text-gray-800 py-2 px-6 rounded-lg mr-4 hover:bg-gray-400 transition-colors">
+        <button className="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-2 px-6 rounded-lg mr-4 hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors">
           Cancel
         </button>
         <button className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">

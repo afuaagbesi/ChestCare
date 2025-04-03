@@ -1,12 +1,25 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Line, Bar } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title as ChartTitle, Tooltip, Legend } from "chart.js";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { motion } from "framer-motion";
-import { FaHeart, FaStethoscope, FaThermometer, FaLungs, FaCalendarAlt , FaChartLine, FaChartBar, FaFilter, FaInfoCircle } from "react-icons/fa";
+import { FaHeart, FaStethoscope, FaThermometer, FaLungs, FaCalendarAlt, FaChartLine, FaChartBar, FaFilter, FaInfoCircle } from "react-icons/fa";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.css";
+import {
+  Card,
+  Title,
+  Text,
+  Metric,
+  BarChart,
+  Subtitle,
+  Flex,
+  ProgressBar,
+  Grid,
+  Col
+} from "@tremor/react";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 // Registering chart components
 ChartJS.register(
@@ -15,12 +28,13 @@ ChartJS.register(
   BarElement,
   PointElement,
   LineElement,
-  Title,
+  ChartTitle,
   Tooltip,
   Legend
 );
 
 function DoctorDashboardPage() {
+  const { isDarkMode } = useDarkMode();
   const [patientStats, setPatientStats] = useState({
     cardiomegaly: 0,
     pneumonia: 0,
@@ -183,8 +197,8 @@ function DoctorDashboardPage() {
     }
   }, [selectedMonth]);
 
-  // Chart options for better visualization
-  const chartOptions = {
+  // Chart options for better visualization - updated for dark mode
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -194,17 +208,22 @@ function DoctorDashboardPage() {
           font: {
             size: 12,
             family: 'Inter, sans-serif'
-          }
+          },
+          color: isDarkMode ? '#e2e8f0' : '#1f2937'
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.8)' : 'rgba(0, 0, 0, 0.8)',
         titleFont: {
           size: 14
         },
         bodyFont: {
           size: 13
-        }
+        },
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: isDarkMode ? 'rgba(100, 116, 139, 0.2)' : 'rgba(200, 200, 200, 0.2)',
+        borderWidth: 1
       }
     },
     scales: {
@@ -213,24 +232,32 @@ function DoctorDashboardPage() {
         ticks: {
           font: {
             size: 12
-          }
+          },
+          color: isDarkMode ? '#cbd5e1' : '#374151'
         },
         grid: {
-          color: 'rgba(200, 200, 200, 0.2)'
+          color: isDarkMode ? 'rgba(71, 85, 105, 0.2)' : 'rgba(200, 200, 200, 0.2)'
+        },
+        border: {
+          color: isDarkMode ? '#475569' : '#d1d5db'
         }
       },
       x: {
         ticks: {
           font: {
             size: 12
-          }
+          },
+          color: isDarkMode ? '#cbd5e1' : '#374151'
         },
         grid: {
           display: false
+        },
+        border: {
+          color: isDarkMode ? '#475569' : '#d1d5db'
         }
       }
     }
-  };
+  }), [isDarkMode]);
 
   // Use ref to store the chart instance
   const chartRef = useRef();
@@ -244,20 +271,32 @@ function DoctorDashboardPage() {
     };
   }, [chartRef]);
 
-  // Custom tab styling - improved layout with more spacing
-  const customTabStyles = {
-    tabList: "flex justify-between mb-6 border-b border-gray-200 overflow-x-auto scrollbar-hide w-full",
-    tab: "py-4 px-8 font-medium text-gray-600 border-b-2 border-transparent cursor-pointer hover:text-blue-600 hover:border-blue-300 transition-all duration-200 whitespace-nowrap inline-block",//flex items-center flex-1 justify-center",
-    selectedTab: "text-blue-600 border-b-2 border-blue-600 font-semibold",
+  // Custom tab styling - improved layout with more spacing and dark mode
+  const customTabStyles = useMemo(() => ({
+    tabList: "flex justify-between mb-6 border-b-2 border-blue-500 dark:border-blue-600 overflow-x-auto scrollbar-hide w-full",
+    tab: `py-4 px-8 font-medium flex items-center justify-center ${
+      isDarkMode 
+        ? 'text-gray-300 bg-gray-800/80' 
+        : 'text-gray-700 bg-gray-100'
+    } border-b-2 border-transparent cursor-pointer transition-all duration-200 whitespace-nowrap inline-block rounded-t-lg mx-1 shadow-sm ${
+      isDarkMode 
+        ? 'hover:text-blue-300 hover:border-blue-400 hover:bg-blue-900/30' 
+        : 'hover:text-blue-600 hover:border-blue-500 hover:bg-blue-100'
+    }`,
+    selectedTab: `py-4 px-8 font-semibold flex items-center justify-center shadow-md rounded-t-lg mx-1 ${
+      isDarkMode 
+        ? 'text-white border-b-2 border-blue-500 bg-blue-800 hover:bg-blue-700 ring-2 ring-blue-500 ring-opacity-50' 
+        : 'text-white border-b-2 border-blue-600 bg-blue-600 hover:bg-blue-500'
+    }`,
     tabPanel: "py-4"
-  };
+  }), [isDarkMode]);
 
   // Icons for each disease
   const diseaseIcons = {
-    cardiomegaly: <FaHeart className="text-red-500 mr-2" />,
-    pneumonia: <FaStethoscope className="text-blue-500 mr-2" />,
-    tuberculosis: <FaThermometer className="text-green-500 mr-2" />,
-    pulmonary: <FaLungs className="text-yellow-500 mr-2" />
+    cardiomegaly: <FaHeart className="text-red-500 dark:text-red-400 mr-2 text-lg" />,
+    pneumonia: <FaStethoscope className="text-blue-500 dark:text-blue-400 mr-2 text-lg" />,
+    tuberculosis: <FaThermometer className="text-green-500 dark:text-green-400 mr-2 text-lg" />,
+    pulmonary: <FaLungs className="text-yellow-500 dark:text-yellow-400 mr-2 text-lg" />
   };
 
   // Handle tab change
@@ -266,86 +305,137 @@ function DoctorDashboardPage() {
     setSelectedDisease(diseaseTypes[index]);
   };
 
-  // Custom CSS for calendar to fix white date issue
+  // Custom CSS for calendar to fix white date issue with dark mode support
   const calendarStyles = `
     .react-calendar {
       width: 100%;
       border-radius: 0.5rem;
-      border: 1px solid #e5e7eb;
+      border: 1px solid ${isDarkMode ? '#374151' : '#e5e7eb'};
       font-family: Inter, system-ui, sans-serif;
+      background-color: ${isDarkMode ? '#1f2937' : '#ffffff'};
+      color: ${isDarkMode ? '#e5e7eb' : '#374151'};
+    }
+    
+    .react-calendar__navigation {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+      background: transparent;
+    }
+    
+    .react-calendar__navigation button {
+      min-width: 32px;
+      height: 32px;
+      background: transparent !important;
+      color: ${isDarkMode ? '#e5e7eb' : '#1f2937'} !important;
+      border: none;
+      padding: 0;
+      margin: 0 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+    
+    .react-calendar__navigation__label {
+      font-weight: 500 !important;
+      font-size: 1rem !important;
+      padding: 0 1rem !important;
+      flex-grow: 0 !important;
+      background: transparent !important;
+      border: none !important;
+      color: ${isDarkMode ? '#e5e7eb' : '#1f2937'} !important;
+    }
+    
+    .react-calendar__navigation__arrow {
+      font-size: 1.25rem;
+      color: ${isDarkMode ? '#e5e7eb' : '#1f2937'} !important;
+    }
+    
+    .react-calendar__navigation__prev2-button,
+    .react-calendar__navigation__next2-button {
+      display: none !important;
+    }
+    
+    .react-calendar__month-view__weekdays {
+      text-align: center;
+      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 0.75rem;
+      padding: 0.5rem 0;
+    }
+    
+    .react-calendar__month-view__weekdays__weekday {
+      padding: 0.5rem;
+      color: #ffffff !important;
     }
     
     .react-calendar__tile {
       padding: 0.75rem 0.5rem;
-      position: relative;
-      color: #374151 !important;
+      font-weight: 500;
+      background: transparent !important;
     }
     
-    .react-calendar__month-view__days__day--weekend {
-      color: #ef4444 !important;
+    .react-calendar__tile:enabled {
+      color: ${isDarkMode ? '#e5e7eb' : '#374151'} !important;
     }
     
-    .react-calendar__month-view__days__day--neighboringMonth {
-      color: #9ca3af !important;
+    .react-calendar__tile:disabled {
+      color: ${isDarkMode ? '#6b7280' : '#9ca3af'} !important;
+    }
+    
+    .react-calendar__tile:enabled:hover {
+      background-color: ${isDarkMode ? '#374151' : '#f3f4f6'} !important;
     }
     
     .react-calendar__tile--now {
-      background: #eff6ff !important;
+      background: ${isDarkMode ? '#1e40af40' : '#dbeafe'} !important;
+      color: ${isDarkMode ? '#93c5fd' : '#2563eb'} !important;
+      font-weight: 600;
     }
     
     .react-calendar__tile--active {
-      background: #3b82f6 !important;
+      background: ${isDarkMode ? '#2563eb' : '#3b82f6'} !important;
       color: white !important;
+      font-weight: 600;
     }
     
-    .react-calendar__tile--active.react-calendar__tile--now {
-      background: #2563eb !important;
+    .react-calendar__tile--active:hover {
+      background: ${isDarkMode ? '#1d4ed8' : '#2563eb'} !important;
     }
     
-    .react-calendar__tile:enabled:hover,
-    .react-calendar__tile:enabled:focus {
-      background-color: #dbeafe !important;
+    .react-calendar__month-view__days__day--weekend {
+      color: ${isDarkMode ? '#fb7185' : '#e11d48'} !important;
     }
     
-    .react-calendar__navigation button:enabled:hover,
-    .react-calendar__navigation button:enabled:focus {
-      background-color: #dbeafe !important;
+    .react-calendar__month-view__days__day--neighboringMonth {
+      color: ${isDarkMode ? '#4b5563' : '#9ca3af'} !important;
     }
     
-    /* Fix for month and arrow visibility */
-    .react-calendar__navigation__label__labelText {
-      color: #1f2937 !important;
-      font-weight: 500;
-    }
-    
-    .react-calendar__navigation__arrow {
-      color: #1f2937 !important;
-    }
-    
-    /* Hide scrollbar for Chrome, Safari and Opera */
-    .scrollbar-hide::-webkit-scrollbar {
-      display: none;
-    }
-    
-    /* Hide scrollbar for IE, Edge and Firefox */
-    .scrollbar-hide {
-      -ms-overflow-style: none;  /* IE and Edge */
-      scrollbar-width: none;  /* Firefox */
+    .react-calendar__tile--active.react-calendar__month-view__days__day--weekend {
+      color: white !important;
     }
   `;
 
+  // Doctor name could come from a global state, context, or prop
+  const doctorName = "Smith";
+  
   return (
-    <div className={"bg-white w-full ${isDarkMode ? 'dark' : ''} min-h-screen"}>
+    <div className={`${isDarkMode 
+      ? 'bg-gray-900 text-gray-100 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gray-800 via-gray-900 to-black' 
+      : 'bg-white text-gray-900 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50 via-white to-gray-50'
+    } w-full min-h-screen`}>
       {/* Custom calendar styles */}
       <style>{calendarStyles}</style>
       
       {/* Month Filter */}
       <div className="flex items-center justify-between mb-4 px-6 pt-4">
-        <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
+        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Dashboard</h2>
         <div className="flex items-center">
-          <FaFilter className="text-blue-600 mr-2" />
+          <FaFilter className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} mr-2`} />
           <select
-            className="bg-white border border-gray-300 rounded-md py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`${isDarkMode ? 'bg-gray-800 border-gray-700 text-gray-200' : 'bg-white border-gray-300 text-gray-700'} border rounded-md py-2 px-4 focus:outline-none focus:ring-2 ${isDarkMode ? 'focus:ring-blue-400' : 'focus:ring-blue-500'}`}
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
           >
@@ -360,14 +450,14 @@ function DoctorDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
         {/* Doctor's Schedule Section */}
         <motion.div
-          className="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 col-span-1 border border-gray-100"
+          className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 col-span-1 border`}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <div className="flex items-center mb-4">
-            <FaCalendarAlt className="text-blue-600 text-xl mr-2" />
-            <h3 className="text-xl font-semibold text-gray-800">Doctor's Schedule</h3>
+            <FaCalendarAlt className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} text-xl mr-2`} />
+            <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Doctor's Schedule</h3>
           </div>
           
           <Calendar 
@@ -377,30 +467,24 @@ function DoctorDashboardPage() {
           />
           
           <div className="mt-5">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-gray-800">Upcoming Appointments</h4>
-              <button 
-                className={`text-sm px-3 py-1 rounded-md transition-colors ${selectedDate ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}
-                onClick={() => setSelectedDate(null)}
-              >
-                {selectedDate ? 'Filtered by date' : 'All dates'}
-              </button>
+            <div className="mb-4">
+              <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Upcoming Appointments</h4>
             </div>
             
             {/* Appointments List */}
             <div className="overflow-y-auto max-h-64 mb-0 pb-0">
               {filteredAppointments.length > 0 ? (
                 filteredAppointments.map((item, index) => (
-                  <div key={index} className="flex items-center p-3 rounded-lg mb-2 bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
-                    {diseaseIcons[item.type] || <FaCalendarAlt className="text-gray-500 mr-2" />}
+                  <div key={index} className={`flex items-center p-3 rounded-lg mb-2 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'} transition-colors duration-200`}>
+                    {diseaseIcons[item.type] || <FaCalendarAlt className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mr-2`} />}
                     <div>
-                      <div className="font-medium text-gray-800">{item.task}</div>
-                      <div className="text-sm text-gray-500">{item.date}</div>
+                      <div className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{item.task}</div>
+                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{item.date}</div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-4 text-gray-500">No appointments found</div>
+                <div className={`text-center py-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>No appointments found</div>
               )}
             </div>
           </div>
@@ -408,7 +492,7 @@ function DoctorDashboardPage() {
 
         {/* Disease Statistics and Cases */}
         <motion.div
-          className="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 col-span-1 lg:col-span-2 border border-gray-100"
+          className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue border-gray-100'} p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 col-span-1 lg:col-span-2 border`}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -416,35 +500,47 @@ function DoctorDashboardPage() {
           <Tabs onSelect={handleTabSelect}>
             <TabList className={customTabStyles.tabList}>
               <Tab className={({ selected }) => 
-                `${customTabStyles.tab} ${selected ? customTabStyles.selectedTab : ''}`
+                selected ? customTabStyles.selectedTab : customTabStyles.tab
               }>
-                {diseaseIcons.cardiomegaly} Cardiomegaly
+                <div className="flex items-center">
+                  {diseaseIcons.cardiomegaly} 
+                  <span>Cardiomegaly</span>
+                </div>
               </Tab>
               <Tab className={({ selected }) => 
-                `${customTabStyles.tab} ${selected ? customTabStyles.selectedTab : ''}`
+                selected ? customTabStyles.selectedTab : customTabStyles.tab
               }>
-                {diseaseIcons.pneumonia} Pneumonia
+                <div className="flex items-center">
+                  {diseaseIcons.pneumonia} 
+                  <span>Pneumonia</span>
+                </div>
               </Tab>
               <Tab className={({ selected }) => 
-                `${customTabStyles.tab} ${selected ? customTabStyles.selectedTab : ''}`
+                selected ? customTabStyles.selectedTab : customTabStyles.tab
               }>
-                {diseaseIcons.tuberculosis} Tuberculosis
+                <div className="flex items-center">
+                  {diseaseIcons.tuberculosis} 
+                  <span>Tuberculosis</span>
+                </div>
               </Tab>
               <Tab className={({ selected }) => 
-                `${customTabStyles.tab} ${selected ? customTabStyles.selectedTab : ''}`
+                selected ? customTabStyles.selectedTab : customTabStyles.tab
               }>
-                {diseaseIcons.pulmonary} Pulmonary Hypertension
+                <div className="flex items-center">
+                  {diseaseIcons.pulmonary} 
+                  <span>Pulmonary Hypertension</span>
+                </div>
               </Tab>
             </TabList>
 
             <TabPanel className={customTabStyles.tabPanel}>
               <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
-                <div className="flex items-center bg-red-50 p-4 rounded-lg">
-                  <FaHeart className="text-4xl text-red-500 mr-4" />
+                <div className={`flex items-center ${isDarkMode ? 'bg-red-900/30' : 'bg-red-50'} p-4 rounded-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 ${isDarkMode ? 'hover:bg-red-900/40' : 'hover:bg-red-100'} cursor-pointer border ${isDarkMode ? 'border-red-800/30 hover:border-red-700/50' : 'border-red-200 hover:border-red-300'}`}>
+                  <FaHeart className={`text-4xl ${isDarkMode ? 'text-red-400' : 'text-red-500'} mr-4`} />
                   <div>
-                    <h3 className="text-lg font-medium text-gray-800">Cardiomegaly</h3>
-                    <p className="text-3xl font-bold text-red-600">{patientStats.cardiomegaly} Cases</p>
-                    <p className="text-sm text-gray-500 mt-1">16% increase this month</p>
+                    <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Cardiomegaly</h3>
+                    <p className={`text-3xl font-bold ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{patientStats.cardiomegaly} Cases</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>16% increase this month</p>
                   </div>
                 </div>
                 <div className="w-full lg:w-2/3 h-64">
@@ -461,12 +557,12 @@ function DoctorDashboardPage() {
 
             <TabPanel className={customTabStyles.tabPanel}>
               <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
-                <div className="flex items-center bg-blue-50 p-4 rounded-lg">
-                  <FaStethoscope className="text-4xl text-blue-500 mr-4" />
+                <div className={`flex items-center ${isDarkMode ? 'bg-blue-900/30' : 'bg-blue-50'} p-4 rounded-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 ${isDarkMode ? 'hover:bg-blue-900/40' : 'hover:bg-blue-100'} cursor-pointer border ${isDarkMode ? 'border-blue-800/30 hover:border-blue-700/50' : 'border-blue-200 hover:border-blue-300'}`}>
+                  <FaStethoscope className={`text-4xl ${isDarkMode ? 'text-blue-400' : 'text-blue-500'} mr-4`} />
                   <div>
-                    <h3 className="text-lg font-medium text-gray-800">Pneumonia</h3>
-                    <p className="text-3xl font-bold text-blue-600">{patientStats.pneumonia} Cases</p>
-                    <p className="text-sm text-gray-500 mt-1">8% increase this month</p>
+                    <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Pneumonia</h3>
+                    <p className={`text-3xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>{patientStats.pneumonia} Cases</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>8% increase this month</p>
                   </div>
                 </div>
                 <div className="w-full lg:w-2/3 h-64">
@@ -483,12 +579,12 @@ function DoctorDashboardPage() {
 
             <TabPanel className={customTabStyles.tabPanel}>
               <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
-                <div className="flex items-center bg-green-50 p-4 rounded-lg">
-                  <FaThermometer className="text-4xl text-green-500 mr-4" />
+                <div className={`flex items-center ${isDarkMode ? 'bg-green-900/30' : 'bg-green-50'} p-4 rounded-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 ${isDarkMode ? 'hover:bg-green-900/40' : 'hover:bg-green-100'} cursor-pointer border ${isDarkMode ? 'border-green-800/30 hover:border-green-700/50' : 'border-green-200 hover:border-green-300'}`}>
+                  <FaThermometer className={`text-4xl ${isDarkMode ? 'text-green-400' : 'text-green-500'} mr-4`} />
                   <div>
-                    <h3 className="text-lg font-medium text-gray-800">Tuberculosis</h3>
-                    <p className="text-3xl font-bold text-green-600">{patientStats.tuberculosis} Cases</p>
-                    <p className="text-sm text-gray-500 mt-1">5% decrease this month</p>
+                    <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Tuberculosis</h3>
+                    <p className={`text-3xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>{patientStats.tuberculosis} Cases</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>5% decrease this month</p>
                   </div>
                 </div>
                 <div className="w-full lg:w-2/3 h-64">
@@ -505,12 +601,12 @@ function DoctorDashboardPage() {
 
             <TabPanel className={customTabStyles.tabPanel}>
               <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
-                <div className="flex items-center bg-yellow-50 p-4 rounded-lg">
-                  <FaLungs className="text-4xl text-yellow-500 mr-4" />
+                <div className={`flex items-center ${isDarkMode ? 'bg-yellow-900/30' : 'bg-yellow-50'} p-4 rounded-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 ${isDarkMode ? 'hover:bg-yellow-900/40' : 'hover:bg-yellow-100'} cursor-pointer border ${isDarkMode ? 'border-yellow-800/30 hover:border-yellow-700/50' : 'border-yellow-200 hover:border-yellow-300'}`}>
+                  <FaLungs className={`text-4xl ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'} mr-4`} />
                   <div>
-                    <h3 className="text-lg font-medium text-gray-800">Pulmonary Hypertension</h3>
-                    <p className="text-3xl font-bold text-yellow-600">{patientStats.pulmonaryHypertension} Cases</p>
-                    <p className="text-sm text-gray-500 mt-1">3% increase this month</p>
+                    <h3 className={`text-lg font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Pulmonary Hypertension</h3>
+                    <p className={`text-3xl font-bold ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'}`}>{patientStats.pulmonaryHypertension} Cases</p>
+                    <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>3% increase this month</p>
                   </div>
                 </div>
                 <div className="w-full lg:w-2/3 h-64">
@@ -525,41 +621,6 @@ function DoctorDashboardPage() {
               </div>
             </TabPanel>
           </Tabs>
-          
-          {/* Disease Facts Section */}
-          <motion.div
-            className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <div className="flex items-center mb-3">
-              <FaInfoCircle className="text-blue-600 mr-2" />
-              <h4 className="text-lg font-semibold text-gray-800">{diseaseFacts[selectedDisease].title}</h4>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-white p-3 rounded shadow-sm">
-                <h5 className="font-medium text-gray-700 mb-1">Definition</h5>
-                <p className="text-gray-600 text-sm">{diseaseFacts[selectedDisease].definition}</p>
-              </div>
-              <div className="bg-white p-3 rounded shadow-sm">
-                <h5 className="font-medium text-gray-700 mb-1">Causes</h5>
-                <p className="text-gray-600 text-sm">{diseaseFacts[selectedDisease].causes}</p>
-              </div>
-              <div className="bg-white p-3 rounded shadow-sm">
-                <h5 className="font-medium text-gray-700 mb-1">Symptoms</h5>
-                <p className="text-gray-600 text-sm">{diseaseFacts[selectedDisease].symptoms}</p>
-              </div>
-              <div className="bg-white p-3 rounded shadow-sm">
-                <h5 className="font-medium text-gray-700 mb-1">Treatment</h5>
-                <p className="text-gray-600 text-sm">{diseaseFacts[selectedDisease].treatment}</p>
-              </div>
-            </div>
-            <div className="bg-white p-3 mt-4 rounded shadow-sm">
-              <h5 className="font-medium text-gray-700 mb-1">Clinical Notes</h5>
-              <p className="text-gray-600 text-sm">{diseaseFacts[selectedDisease].notes}</p>
-            </div>
-          </motion.div>
         </motion.div>
       </div>
 
@@ -571,21 +632,21 @@ function DoctorDashboardPage() {
         transition={{ duration: 0.7 }}
       >
         <div className="flex items-center mb-4">
-          <FaChartLine className="text-blue-600 text-xl mr-2" />
-          <h3 className="text-xl font-semibold text-gray-800">Patient Disease Trends</h3>
+          <FaChartLine className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} text-xl mr-2`} />
+          <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Patient Disease Trends</h3>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Line Chart showing disease trends over months */}
           <motion.div
-            className="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100"
+            className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border`}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
             <div className="flex items-center mb-4">
-              <FaChartLine className="text-blue-500 mr-2" />
-              <h4 className="text-lg font-medium text-gray-800">Monthly Trends</h4>
+              <FaChartLine className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} mr-2`} />
+              <h4 className={`text-lg font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Monthly Trends</h4>
             </div>
             <div className="h-72">
               <Line data={chartData} options={chartOptions} />
@@ -594,14 +655,14 @@ function DoctorDashboardPage() {
 
           {/* Bar Chart showing overall disease count */}
           <motion.div
-            className="bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100"
+            className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 border`}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
             <div className="flex items-center mb-4">
-              <FaChartBar className="text-blue-500 mr-2" />
-              <h4 className="text-lg font-medium text-gray-800">Disease Comparison</h4>
+              <FaChartBar className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} mr-2`} />
+              <h4 className={`text-lg font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Disease Comparison</h4>
             </div>
             <div className="h-72">
               <Bar 
@@ -616,6 +677,54 @@ function DoctorDashboardPage() {
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Rest of the dashboard content */}
+      <Grid numItemsMd={2} numItemsLg={3} className="gap-6 mb-6">
+        <Card className="dark:bg-dark-card">
+          <Flex>
+            <div>
+              <Title>Total Patients</Title>
+              <Metric>1,234</Metric>
+            </div>
+            <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+          </Flex>
+          <Text className="mt-4">7% increase from last month</Text>
+        </Card>
+        
+        <Card className="dark:bg-dark-card">
+          <Flex>
+            <div>
+              <Title>Analyzed X-rays</Title>
+              <Metric>2,862</Metric>
+            </div>
+            <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+          </Flex>
+          <Text className="mt-4">12% increase from last month</Text>
+        </Card>
+        
+        <Card className="dark:bg-dark-card">
+          <Flex>
+            <div>
+              <Title>Detection Rate</Title>
+              <Metric>94.3%</Metric>
+            </div>
+            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+          </Flex>
+          <Text className="mt-4">2.4% increase from last month</Text>
+        </Card>
+      </Grid>
     </div>
   );
 }

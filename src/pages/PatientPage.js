@@ -200,7 +200,7 @@ function PatientPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto">
         <header 
           id="dashboardHeader" 
@@ -215,82 +215,98 @@ function PatientPage() {
           </button>
         </header>
 
-        {/* Search and Filter Section */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search patients..."
+                className="pl-10 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              />
             </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={handleSearch}
-              placeholder="Search by name or diagnosis..."
-              className="pl-10 p-2 border border-gray-300 rounded-md w-full bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-            />
-          </div>
-          
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-5 w-5 text-gray-400" />
+            
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <select
+                value={ageFilter}
+                onChange={(e) => setAgeFilter(e.target.value)}
+                className="pl-10 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="All">All Ages</option>
+                <option value="0-18">0-18 years</option>
+                <option value="19-40">19-40 years</option>
+                <option value="41-65">41-65 years</option>
+                <option value="65+">65+ years</option>
+              </select>
             </div>
-            <select
-              value={ageFilter}
-              onChange={handleAgeFilter}
-              className="pl-10 p-2 border border-gray-300 rounded-md w-full bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-            >
-              <option value="All">All Ages</option>
-              <option value="0-18">0-18 years</option>
-              <option value="19-40">19-40 years</option>
-              <option value="41-65">41-65 years</option>
-              <option value="65+">65+ years</option>
-            </select>
-          </div>
-          
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <User className="h-5 w-5 text-gray-400" />
+            
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <select
+                value={sexFilter}
+                onChange={(e) => setSexFilter(e.target.value)}
+                className="pl-10 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="All">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
             </div>
-            <select
-              value={sexFilter}
-              onChange={handleSexFilter}
-              className="pl-10 p-2 border border-gray-300 rounded-md w-full bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-            >
-              <option value="All">All Genders</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-          
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FileText className="h-5 w-5 text-gray-400" />
+            
+            <div className="relative">
+              <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="pl-10 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="All">All Statuses</option>
+                <option value="diagnosed">Diagnosed</option>
+                <option value="undiagnosed">Undiagnosed</option>
+              </select>
             </div>
-            <select
-              value={statusFilter}
-              onChange={handleStatusFilter}
-              className="pl-10 p-2 border border-gray-300 rounded-md w-full bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-            >
-              <option value="All">All Statuses</option>
-              <option value="diagnosed">Diagnosed</option>
-              <option value="undiagnosed">Undiagnosed</option>
-            </select>
           </div>
         </div>
 
         {/* Patient List */}
-        <div className="mb-6">
-          <PatientList 
-            patients={filteredPatients} 
-            openProfile={openPatientProfile}
-            getStatusColor={getStatusColor}
-          />
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+          {filteredPatients.map((patient) => (
+            <div
+              key={patient.id}
+              className="border-b border-gray-200 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+              onClick={() => openPatientProfile(patient)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <img
+                    src={patient.image}
+                    alt={patient.name}
+                    className="h-12 w-12 rounded-full object-cover"
+                  />
+                  <div className="ml-4">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                      {patient.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {patient.diagnosis || "Pending diagnosis"}
+                    </p>
+                  </div>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(patient.status)}`}>
+                  {patient.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Patient Profile Dialog */}
+        {/* Patient Details Modal */}
         {selectedPatient && (
           <Dialog open={!!selectedPatient} onOpenChange={closePatientProfile}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 max-w-3xl">
               <DialogHeader>
                 <DialogTitle className="text-xl">Patient Profile</DialogTitle>
               </DialogHeader>
@@ -307,15 +323,15 @@ function PatientPage() {
                   <h2 className="text-lg font-semibold">{selectedPatient.name}</h2>
                   
                   <div className="flex items-center gap-2 mt-1">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
+                    <User className="h-4 w-4 text-white-500" />
+                    <span className="text-sm text-white-600">
                       {selectedPatient.age} years, {selectedPatient.sex}
                     </span>
                   </div>
                   
                   <div className="flex items-center gap-2 mt-1">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">{selectedPatient.date}</span>
+                    <Calendar className="h-4 w-4 text-white-500" />
+                    <span className="text-sm text-white-600">{selectedPatient.date}</span>
                   </div>
                   
                   <div className="mt-3">
@@ -327,59 +343,53 @@ function PatientPage() {
                 
                 {/* Medical Details Column */}
                 <div className="md:col-span-2">
-                  <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-8">
+                  <div className="mb-6">
+                    
+                    <div className="flex space-x-2 mb-4">
                       {["details", "xray", "vitals"].map((tab) => (
                         <button
                           key={tab}
                           onClick={() => setActiveTab(tab)}
-                          className={`whitespace-nowrap py-4 px-3 border-w-2 font-medium text-sm transition-all duration-300 border-b-2${
+                          className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                             activeTab === tab
-                              ? "border-blue-500 text-white-600 font-semibold"
-                              : "border-transparent text-white-500 hover:text-gray-700 hover:border-gray-300"
+                              ? "bg-blue-600 text-white dark:bg-blue-700 dark:text-white shadow-sm"
+                              : "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-white dark:hover:bg-blue-800/60"
                           }`}
                         >
                           {tab.charAt(0).toUpperCase() + tab.slice(1)}
                         </button>
                       ))}
-                    </nav>
+                    </div>
                   </div>
                   
                   {activeTab === "details" && (
-                    <div className="bg-gray-50 p-4 rounded-md mt-4">
-                      <div className="mb-3">
-                        <h3 className="text-sm font-medium text-gray-700">Diagnosis</h3>
-                        <p className="mt-1 text-gray-900">{selectedPatient.diagnosis || "Pending diagnosis"}</p>
-                      </div>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-gray-900 dark:text-white">
+                      <h2 className="text-xl font-semibold">Diagnosis</h2>
+                      <p className="text-gray-800 dark:text-gray-200">{selectedPatient.diagnosis || "Pending"}</p>
                       
-                      <div className="mb-3">
-                        <h3 className="text-sm font-medium text-gray-700">Notes</h3>
-                        <p className="mt-1 text-gray-900">{selectedPatient.notes}</p>
-                      </div>
+                      <h2 className="text-xl font-semibold mt-4">Notes</h2>
+                      <p className="text-gray-800 dark:text-gray-200">{selectedPatient.notes}</p>
                       
-                      <div className="flex items-center mt-4">
-                        <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105">
-                          <FileText className="h-4 w-4 mr-2" />
-                          View Full Record
-                        </button>
-                      </div>
+                      <button className="mt-4 text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 px-4 py-2 rounded-lg font-medium transition-colors">
+                        View Full Record
+                      </button>
                     </div>
                   )}
                   
                   {activeTab === "xray" && (
-                    <div className="bg-gray-50 p-4 rounded-md mt-4">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-md mt-4">
                       <div className="flex justify-center">
                         <img 
                           src={selectedPatient.xray} 
                           alt="Patient X-Ray" 
-                          className="max-h-64 object-contain border border-gray-200 rounded-md"
+                          className="max-h-64 object-contain border border-gray-200 dark:border-gray-700 rounded-md"
                         />
                       </div>
                       
                       <div className="flex items-center justify-between mt-4">
-                        <span className="text-sm text-gray-500">Uploaded on {selectedPatient.date}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">Uploaded on {selectedPatient.date}</span>
                         
-                        <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105">
+                        <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105">
                           <Upload className="h-4 w-4 mr-2" />
                           Upload New X-Ray
                         </button>
@@ -388,31 +398,31 @@ function PatientPage() {
                   )}
                   
                   {activeTab === "vitals" && (
-                    <div className="bg-gray-50 p-4 rounded-md mt-4">
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-md mt-4">
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
-                          <div className="text-sm font-medium text-gray-500">Blood Pressure</div>
-                          <div className="mt-1 text-lg">{selectedPatient.vitals.bp}</div>
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
+                          <div className="text-sm font-medium text-gray-500 dark:text-gray-300">Blood Pressure</div>
+                          <div className="mt-1 text-lg text-gray-800 dark:text-gray-100">{selectedPatient.vitals.bp}</div>
                         </div>
                         
-                        <div className="bg-white p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
-                          <div className="text-sm font-medium text-gray-500">Temperature</div>
-                          <div className="mt-1 text-lg">{selectedPatient.vitals.temp}</div>
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
+                          <div className="text-sm font-medium text-gray-500 dark:text-gray-300">Temperature</div>
+                          <div className="mt-1 text-lg text-gray-800 dark:text-gray-100">{selectedPatient.vitals.temp}</div>
                         </div>
                         
-                        <div className="bg-white p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
-                          <div className="text-sm font-medium text-gray-500">Pulse Rate</div>
-                          <div className="mt-1 text-lg">{selectedPatient.vitals.pulse}</div>
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
+                          <div className="text-sm font-medium text-gray-500 dark:text-gray-300">Pulse Rate</div>
+                          <div className="mt-1 text-lg text-gray-800 dark:text-gray-100">{selectedPatient.vitals.pulse}</div>
                         </div>
                         
-                        <div className="bg-white p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
-                          <div className="text-sm font-medium text-gray-500">Respiratory Rate</div>
-                          <div className="mt-1 text-lg">{selectedPatient.vitals.resp}</div>
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md shadow-sm transition-all duration-300 hover:shadow-md">
+                          <div className="text-sm font-medium text-gray-500 dark:text-gray-300">Respiratory Rate</div>
+                          <div className="mt-1 text-lg text-gray-800 dark:text-gray-100">{selectedPatient.vitals.resp}</div>
                         </div>
                       </div>
                       
                       <div className="flex items-center mt-4">
-                        <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105">
+                        <button className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 hover:scale-105">
                           <Clock className="h-4 w-4 mr-2" />
                           View Vitals History
                         </button>
