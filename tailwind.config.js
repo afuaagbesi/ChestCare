@@ -15,7 +15,13 @@ module.exports = {
           card: '#2d3748',
           text: '#e2e8f0',
           border: '#4a5568'
-        }
+        },
+        'dark-bg': '#121212',
+        'dark-card': '#1E1E1E',
+        'dark-text': '#E5E5E5',
+        'dark-border': '#333333',
+        'dark-hover': '#2C2C2C',
+        'dark-button': '#3B82F6',
       },
       fontFamily: {
         sans: ['Poppins', 'Arial', 'sans-serif'], // Example of custom font

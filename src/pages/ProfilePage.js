@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDarkMode } from "../contexts/DarkModeContext";
 
 function ProfilePage() {
+  const { isDarkMode } = useDarkMode();
   const [formData, setFormData] = useState({
     name: "Dr. John Doe",
     specialty: "Cardiology",
@@ -80,7 +82,7 @@ function ProfilePage() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100"
+      className={`min-h-screen ${isDarkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-gray-50 to-gray-100'}`}
     >
       <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         {/* Success notification */}
@@ -102,7 +104,7 @@ function ProfilePage() {
         </AnimatePresence>
 
         <motion.div 
-          className="bg-white rounded-xl shadow-lg overflow-hidden"
+          className={`${isDarkMode ? 'bg-gray-800 shadow-xl' : 'bg-white shadow-lg'} rounded-xl overflow-hidden`}
           initial={{ y: 20 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -125,7 +127,7 @@ function ProfilePage() {
           </div>
 
           {/* Content */}
-          <div className="p-8">
+          <div className={`p-8 ${isDarkMode ? 'text-gray-200' : ''}`}>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {/* Avatar and basic info */}
               <motion.div 
@@ -134,7 +136,7 @@ function ProfilePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <div className="flex flex-col items-center bg-gray-50 p-6 rounded-lg shadow-sm">
+                <div className={`flex flex-col items-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'} p-6 rounded-lg shadow-sm`}>
                   <motion.div 
                     className="relative rounded-full overflow-hidden mb-6 w-40 h-40 border-4 border-blue-100 cursor-pointer shadow-md"
                     onClick={editing ? handleAvatarClick : undefined}
@@ -163,17 +165,17 @@ function ProfilePage() {
                       className="hidden"
                     />
                   </motion.div>
-                  <h2 className="text-2xl font-bold text-black">{formData.name}</h2>
-                  <p className="text-black font-medium text-lg mb-4">{formData.specialty}</p>
-                  <div className="w-full border-t border-gray-200 pt-4 mt-2">
-                    <div className="text-black flex items-center mb-3 hover:text-indigo-600 transition-colors">
+                  <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-black'}`}>{formData.name}</h2>
+                  <p className={`${isDarkMode ? 'text-gray-300' : 'text-black'} font-medium text-lg mb-4`}>{formData.specialty}</p>
+                  <div className={`w-full border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'} pt-4 mt-2`}>
+                    <div className={`${isDarkMode ? 'text-gray-300 hover:text-blue-400' : 'text-black hover:text-indigo-600'} flex items-center mb-3 transition-colors`}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                         <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                       </svg>
                       {formData.email}
                     </div>
-                    <div className="text-black flex items-center mb-4 hover:text-indigo-600 transition-colors">
+                    <div className={`${isDarkMode ? 'text-gray-300 hover:text-blue-400' : 'text-black hover:text-indigo-600'} flex items-center mb-4 transition-colors`}>
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                       </svg>
@@ -181,7 +183,7 @@ function ProfilePage() {
                     </div>
                   </div>
                   <div className="w-full">
-                    <h3 className="text-gray-700 font-medium mb-3">Languages</h3>
+                    <h3 className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} font-medium mb-3`}>Languages</h3>
                     <div className="flex flex-wrap gap-2">
                       <AnimatePresence>
                         {formData.languages.map((language, index) => (
@@ -190,13 +192,13 @@ function ProfilePage() {
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.8 }}
-                            className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center"
+                            className={`${isDarkMode ? 'bg-blue-900 text-blue-100' : 'bg-blue-100 text-blue-800'} px-3 py-1 rounded-full text-sm flex items-center`}
                           >
                             {language}
                             {editing && (
                               <motion.button 
                                 onClick={() => handleRemoveLanguage(language)}
-                                className="ml-2 text-blue-600 hover:text-blue-800"
+                                className={`ml-2 ${isDarkMode ? 'text-blue-300 hover:text-blue-100' : 'text-blue-600 hover:text-blue-800'}`}
                                 whileHover={{ scale: 1.2 }}
                                 whileTap={{ scale: 0.9 }}
                               >
@@ -220,11 +222,11 @@ function ProfilePage() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
-                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} p-6 rounded-lg shadow-sm border`}>
                   <form onSubmit={handleSubmit}>
                     <div className="space-y-5">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Full Name</label>
                         <input
                           type="text"
                           name="name"
@@ -233,14 +235,18 @@ function ProfilePage() {
                           disabled={!editing}
                           className={`block w-full rounded-md shadow-sm ${
                             editing 
-                              ? 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
-                              : 'bg-gray-50 border-gray-200 text-black'
+                              ? isDarkMode 
+                                ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
+                                : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all'
+                              : isDarkMode
+                                ? 'bg-gray-700 border-gray-600 text-gray-300' 
+                                : 'bg-gray-50 border-gray-200 text-black'
                           } sm:text-sm`}
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Specialty</label>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Specialty</label>
                         <input
                           type="text"
                           name="specialty"
@@ -249,15 +255,19 @@ function ProfilePage() {
                           disabled={!editing}
                           className={`block w-full rounded-md shadow-sm ${
                             editing 
-                              ? 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
-                              : 'bg-gray-50 border-gray-200 text-black'
+                              ? isDarkMode 
+                                ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
+                                : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all'
+                              : isDarkMode
+                                ? 'bg-gray-700 border-gray-600 text-gray-300' 
+                                : 'bg-gray-50 border-gray-200 text-black'
                           } sm:text-sm`}
                         />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Email</label>
                           <input
                             type="email"
                             name="email"
@@ -266,14 +276,18 @@ function ProfilePage() {
                             disabled={!editing}
                             className={`block w-full rounded-md shadow-sm ${
                               editing 
-                                ? 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
-                                : 'bg-gray-50 border-gray-200 text-black'
+                                ? isDarkMode 
+                                  ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
+                                  : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all'
+                                : isDarkMode
+                                  ? 'bg-gray-700 border-gray-600 text-gray-300' 
+                                  : 'bg-gray-50 border-gray-200 text-black'
                             } sm:text-sm`}
                           />
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                          <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Phone</label>
                           <input
                             type="text"
                             name="phone"
@@ -282,15 +296,19 @@ function ProfilePage() {
                             disabled={!editing}
                             className={`block w-full rounded-md shadow-sm ${
                               editing 
-                                ? 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
-                                : 'bg-gray-50 border-gray-200 text-black'
+                                ? isDarkMode 
+                                  ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
+                                  : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all'
+                                : isDarkMode
+                                  ? 'bg-gray-700 border-gray-600 text-gray-300' 
+                                  : 'bg-gray-50 border-gray-200 text-black'
                             } sm:text-sm`}
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Hospital/Practice</label>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Hospital/Practice</label>
                         <input
                           type="text"
                           name="hospital"
@@ -299,8 +317,12 @@ function ProfilePage() {
                           disabled={!editing}
                           className={`block w-full rounded-md shadow-sm ${
                             editing 
-                              ? 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
-                              : 'bg-gray-50 border-gray-200 text-black'
+                              ? isDarkMode 
+                                ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
+                                : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all'
+                              : isDarkMode
+                                ? 'bg-gray-700 border-gray-600 text-gray-300' 
+                                : 'bg-gray-50 border-gray-200 text-black'
                           } sm:text-sm`}
                         />
                       </div>
@@ -313,20 +335,28 @@ function ProfilePage() {
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3 }}
                           >
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Add Language</label>
+                            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Add Language</label>
                             <div className="mt-1 flex rounded-md shadow-sm">
                               <input
                                 type="text"
                                 value={newLanguage}
                                 onChange={(e) => setNewLanguage(e.target.value)}
-                                className="flex-1 min-w-0 block w-full px-3 py-2 rounded-l-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                className={`flex-1 min-w-0 block w-full px-3 py-2 rounded-l-md ${
+                                  isDarkMode 
+                                    ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500' 
+                                    : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'
+                                } sm:text-sm`}
                                 placeholder="e.g. French"
                               />
                               <motion.button
                                 type="button"
                                 onClick={handleAddLanguage}
-                                className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-gray-50 text-gray-700 sm:text-sm hover:bg-gray-100 transition-colors"
-                                whileHover={{ backgroundColor: "#f3f4f6" }}
+                                className={`inline-flex items-center px-4 py-2 border border-l-0 ${
+                                  isDarkMode 
+                                    ? 'border-gray-600 bg-gray-600 text-gray-200 hover:bg-gray-500' 
+                                    : 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                                } rounded-r-md sm:text-sm transition-colors`}
+                                whileHover={{ backgroundColor: isDarkMode ? "#4B5563" : "#f3f4f6" }}
                                 whileTap={{ scale: 0.98 }}
                               >
                                 Add
@@ -337,7 +367,7 @@ function ProfilePage() {
                       </AnimatePresence>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                        <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Bio</label>
                         <textarea
                           name="bio"
                           rows="4"
@@ -346,8 +376,12 @@ function ProfilePage() {
                           disabled={!editing}
                           className={`block w-full rounded-md shadow-sm ${
                             editing 
-                              ? 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
-                              : 'bg-gray-50 border-gray-200 text-black'
+                              ? isDarkMode 
+                                ? 'border-gray-600 bg-gray-700 text-gray-200 focus:border-indigo-500 focus:ring-indigo-500 transition-all' 
+                                : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 transition-all'
+                              : isDarkMode
+                                ? 'bg-gray-700 border-gray-600 text-gray-300' 
+                                : 'bg-gray-50 border-gray-200 text-black'
                           } sm:text-sm`}
                         ></textarea>
                       </div>
@@ -438,7 +472,7 @@ function ProfilePage() {
           ].map((stat, index) => (
             <motion.div
               key={stat.title}
-              className="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100"
+              className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} overflow-hidden shadow-lg rounded-xl border`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 + (index * 0.1) }}
@@ -454,10 +488,10 @@ function ProfilePage() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">
+                      <dt className={`text-sm font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} truncate`}>
                         {stat.title}
                       </dt>
-                      <dd className="text-xl font-bold text-gray-900">
+                      <dd className={`text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                         {stat.value}
                       </dd>
                     </dl>
