@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import { useAuth } from "../contexts/AuthContext"; 
 
 const UploadXrayPage = () => {
   const { isDarkMode } = useDarkMode();
+  const { api } = useAuth(); // Add this line to get the api instance
   const [currentStep, setCurrentStep] = useState("selectPatient");
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [image, setImage] = useState(null);
@@ -13,20 +15,46 @@ const UploadXrayPage = () => {
   const [fullScreen, setFullScreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [animatePatientList, setAnimatePatientList] = useState(true);
+  const [patients, setPatients] = useState([]);
+  const [patientsLoading, setPatientsLoading] = useState(true);
+  const [patientsError, setPatientsError] = useState("");
+
+
   
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        setPatientsLoading(true);
+        const response = await api.get('/dashboard/api/patients');
+        
+        // Transform backend data to match your component's expected format
+        const transformedPatients = response.data.map(patient => ({
+          id: patient.id.toString(), // Convert to string to match existing format
+          name: patient.full_name,
+          age: patient.age,
+          gender: patient.gender_display,
+          // Store the full patient data for later use
+          fullData: patient
+        }));
+        
+        setPatients(transformedPatients);
+        setPatientsError("");
+      } catch (err) {
+        console.error('Error fetching patients:', err);
+        setPatientsError("Failed to load patients. Please try again.");
+      } finally {
+        setPatientsLoading(false);
+      }
+    };
+
+    fetchPatients();
+  }, [api]);
+
   // Reset animation flag when search query changes
   useEffect(() => {
     setAnimatePatientList(true);
   }, [searchQuery]);
-  
-  // Mock patient data - in a real app, this would come from your backend
-  const patients = [
-    { id: "P1001", name: "John Smith", age: 45, gender: "Male" },
-    { id: "P1002", name: "Emma Johnson", age: 32, gender: "Female" },
-    { id: "P1003", name: "Michael Brown", age: 67, gender: "Male" },
-    { id: "P1004", name: "Sarah Williams", age: 28, gender: "Female" },
-    { id: "P1005", name: "Robert Davis", age: 52, gender: "Male" }
-  ];
+
 
   // Filter patients based on search query
   const filteredPatients = patients.filter(patient => 
@@ -284,7 +312,7 @@ Diagnosis Probabilities:
         </div>
         
         {/* Patient selection step */}
-        <AnimatePresence mode="wait">
+     <AnimatePresence mode="wait">
           {currentStep === "selectPatient" && (
             <motion.div
               key="select-patient"

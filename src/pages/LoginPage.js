@@ -1,10 +1,9 @@
-// export default LoginPage;
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaLock, FaEnvelope, FaUserMd } from "react-icons/fa";
+import { FaLock, FaEnvelope, FaUserMd, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useAuth } from "../contexts/AuthContext"; 
 
 function LoginPage() {
@@ -16,6 +15,27 @@ function LoginPage() {
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedCredentials = localStorage.getItem('rememberedCredentials');
+    if (savedCredentials) {
+      try {
+        const { email, password, remember } = JSON.parse(savedCredentials);
+        setFormData({
+          email: email || "",
+          password: password || ""
+        });
+        setRememberMe(remember || false);
+      } catch (error) {
+        console.error("Error loading saved credentials:", error);
+        // Clear corrupted data
+        localStorage.removeItem('rememberedCredentials');
+      }
+    }
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -64,6 +84,28 @@ function LoginPage() {
     }
   };
 
+  const handleRememberMeChange = (e) => {
+    setRememberMe(e.target.checked);
+  };
+
+  const toggleShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const saveCredentials = () => {
+    if (rememberMe) {
+      const credentialsToSave = {
+        email: formData.email,
+        password: formData.password,
+        remember: true
+      };
+      localStorage.setItem('rememberedCredentials', JSON.stringify(credentialsToSave));
+    } else {
+      // Remove saved credentials if remember me is unchecked
+      localStorage.removeItem('rememberedCredentials');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -72,6 +114,10 @@ function LoginPage() {
     if (validateForm()) {
       try {
         await login(formData.email, formData.password);
+        
+        // Save credentials only after successful login
+        saveCredentials();
+        
         toast.success("Login successful!");
         navigate('/doctordashboard');
       } catch (error) {
@@ -157,7 +203,7 @@ function LoginPage() {
           </div>
 
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
-            Welcome Back
+            Welcome To ChestCare
           </h2>
           <p className="text-center text-gray-600 mb-6">
             Login to continue to ChestCare
@@ -198,23 +244,30 @@ function LoginPage() {
               transition={{ delay: 0.2 }}
               className="mb-4 relative"
             >
-              <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
-              <input
-                type="password"
+            <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+                <input
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
-                className={`w-full pl-10 pr-4 py-3 bg-gray-50 text-gray-800 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                className={`w-full pl-10 pr-12 py-3 bg-gray-50 text-gray-800 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
                 value={formData.password}
                 onChange={handleChange}
               />
+              <span
+                onClick={toggleShowPassword}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors duration-200 text-sm"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </span>
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </motion.div>
-
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="remember"
+                  checked={rememberMe}
+                  onChange={handleRememberMeChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
