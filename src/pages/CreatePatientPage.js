@@ -227,41 +227,137 @@ const handleChange = async (e) => {
   }
 };
 
+// Helper function to map gender values
+const mapGenderToBackend = (gender) => {
+  const genderMap = {
+    'male': 'M',
+    'female': 'F',
+    'other': 'O'
+  };
+  return genderMap[gender] || gender;
+};
+
+// Helper function to map smoking status
+const mapSmokingStatus = (status) => {
+  const smokingMap = {
+    'never': 'never_smoked',
+    'former': 'former_smoker', 
+    'current': 'current_smoker'
+  };
+  return smokingMap[status] || status;
+};
+
+// Complete field mapping for frontend to backend
 const handleSubmit = async (e) => {
   e.preventDefault();
   
   try {
-    // Prepare data for backend
+    // Map all frontend fields to backend fields
     const patientData = {
-      ...formData,
-      // Map frontend fields to backend fields
-      xray_image_url: formData.xrayImageUrl,
-      // Remove frontend-only fields
-      xrayFile: undefined,
-      xrayImageUrl: undefined,
+      // Basic Demographics
+      first_name: formData.firstName,
+      last_name: formData.lastName,
+      date_of_birth: formData.dateOfBirth,
+      gender: mapGenderToBackend(formData.gender),
+      phone: formData.contactNumber,
+      patient_id: formData.patientId, // Custom patient ID field
+      
+      // Profile image
       profile_image_url: profileImageUrl,
-
+      
+      // Clinical Information
+      suspected_condition: formData.suspectedCondition,
+      
+      // Individual symptom fields (if you add them to your model)
+      cough: formData.symptoms.cough,
+      fever: formData.symptoms.fever,
+      chest_pain: formData.symptoms.chestPain,
+      shortness_of_breath: formData.symptoms.shortnessOfBreath,
+      fatigue: formData.symptoms.fatigue,
+      night_sweats: formData.symptoms.nightSweats,
+      weight_loss: formData.symptoms.weightLoss,
+      hemoptysis: formData.symptoms.hemoptysis,
+      edema: formData.symptoms.edema,
+      syncope: formData.symptoms.syncope,
+      
+      // Vital Signs
+      temperature: formData.temperature ? parseFloat(formData.temperature) : null,
+      heart_rate: formData.heartRate ? parseInt(formData.heartRate) : null,
+      respiratory_rate: formData.respiratoryRate ? parseInt(formData.respiratoryRate) : null,
+      oxygen_saturation: formData.oxygenSaturation ? parseFloat(formData.oxygenSaturation) : null,
+      
+      // Split blood pressure into systolic/diastolic
+      blood_pressure_systolic: formData.bloodPressure ? 
+        parseInt(formData.bloodPressure.split('/')[0]?.trim()) : null,
+      blood_pressure_diastolic: formData.bloodPressure ? 
+        parseInt(formData.bloodPressure.split('/')[1]?.trim()) : null,
+      
+      // Medical History
+      smoking_status: mapSmokingStatus(formData.smokingHistory),
+      prior_tb_exposure: formData.tbExposure,
+      family_history_heart_disease: formData.familyHistoryHeartDisease,
+      previous_cardiac_conditions: formData.previousCardiacConditions,
+      hiv_status: formData.hivStatus,
+      
+      // Laboratory Results
+      white_blood_cell_count: formData.wbc ? parseFloat(formData.wbc) : null,
+      c_reactive_protein: formData.crp ? parseFloat(formData.crp) : null,
+      bnp: formData.bnp ? parseFloat(formData.bnp) : null,
+      
+      // X-ray Information
+      xray_image_url: formData.xrayImageUrl,
+      xray_date: formData.xrayDate,
+      
+      // Additional Notes
+      additional_notes: formData.clinicalNotes
     };
     
-    const response = await api.post('/api/patients/', patientData);
-
+    // Clean up the data - remove null, undefined, and empty string values
+    const cleanedData = {};
+    Object.entries(patientData).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        cleanedData[key] = value;
+      }
+    });
     
-if (response.status === 200 || response.status === 201) {
-  const result = response.data; // axios uses .data, not .json()
-  alert(`Patient ${formData.firstName} ${formData.lastName} created successfully!`);
-  
-  if (formData.xrayImageUrl && result.id) {
-    await runPrediction(result.id, formData.xrayImageUrl);
-  }
-} else {
-  throw new Error('Failed to create patient');
-}
+    console.log('Sending patient data:', cleanedData); // Debug log
+    
+    const response = await api.post('/dashboard/api/patients/', cleanedData);
+    
+    if (response.status === 200 || response.status === 201) {
+      const result = response.data;
+      alert(`Patient ${formData.firstName} ${formData.lastName} created successfully!`);
+      
+      // Run prediction if X-ray image is available
+      if (formData.xrayImageUrl && result.id) {
+        await runPrediction(result.id, formData.xrayImageUrl);
+      }
+      
+      // Navigate back or to patient list
+      navigate('/patients');
+    } else {
+      throw new Error('Failed to create patient');
+    }
   } catch (error) {
     console.error('Error creating patient:', error);
-    alert('Failed to create patient. Please try again.');
+    if (error.response?.data) {
+      console.error('Backend validation errors:', error.response.data);
+      // Show specific validation errors to user
+      const errors = error.response.data;
+      let errorMessage = 'Validation errors:\n';
+      Object.entries(errors).forEach(([field, messages]) => {
+        if (Array.isArray(messages)) {
+          errorMessage += `${field}: ${messages.join(', ')}\n`;
+        } else {
+          errorMessage += `${field}: ${messages}\n`;
+        }
+      });
+      alert(errorMessage);
+    } else {
+      alert('Failed to create patient. Please try again.');
+    }
   }
 };
-
 // Optional: Function to run prediction after patient creation
 const runPrediction = async (patientId, imageUrl) => {
   try {

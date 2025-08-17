@@ -2,9 +2,9 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-// Create Axios instance for API calls
+//Axios instance for API calls
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000',
+  baseURL: process.env.REACT_APP_API_BASE_URL,
 });
 
 const AuthContext = createContext({
