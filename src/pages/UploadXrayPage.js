@@ -5,10 +5,11 @@ import { useAuth } from "../contexts/AuthContext";
 
 const UploadXrayPage = () => {
   const { isDarkMode } = useDarkMode();
-  const { api } = useAuth(); // Add this line to get the api instance
+  const { api } = useAuth();
   const [currentStep, setCurrentStep] = useState("selectPatient");
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [image, setImage] = useState(null);
+  const [imageFile, setImageFile] = useState(null); // Store actual file
+  const [imagePreview, setImagePreview] = useState(null); // Store preview URL
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
@@ -19,21 +20,17 @@ const UploadXrayPage = () => {
   const [patientsLoading, setPatientsLoading] = useState(true);
   const [patientsError, setPatientsError] = useState("");
 
-
-  
   useEffect(() => {
     const fetchPatients = async () => {
       try {
         setPatientsLoading(true);
         const response = await api.get('/dashboard/api/patients');
         
-        // Transform backend data to match your component's expected format
         const transformedPatients = response.data.map(patient => ({
-          id: patient.id.toString(), // Convert to string to match existing format
+          id: patient.id.toString(),
           name: patient.full_name,
           age: patient.age,
           gender: patient.gender_display,
-          // Store the full patient data for later use
           fullData: patient
         }));
         
@@ -50,13 +47,10 @@ const UploadXrayPage = () => {
     fetchPatients();
   }, [api]);
 
-  // Reset animation flag when search query changes
   useEffect(() => {
     setAnimatePatientList(true);
   }, [searchQuery]);
 
-
-  // Filter patients based on search query
   const filteredPatients = patients.filter(patient => 
     patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     patient.id.toLowerCase().includes(searchQuery.toLowerCase())
@@ -65,53 +59,94 @@ const UploadXrayPage = () => {
   const handleSelectPatient = (patient) => {
     setSelectedPatient(patient);
     setCurrentStep("uploadXray");
-    setImage(null);
+    setImageFile(null);
+    setImagePreview(null);
     setResults(null);
+    setError("");
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
-      setImage(URL.createObjectURL(file));
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
       setError("");
       setResults(null);
     } else {
       setError("Please upload a valid X-ray image file.");
+      setImageFile(null);
+      setImagePreview(null);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!image) {
+    if (!imageFile) {
       setError("Please upload an X-ray image first.");
       return;
     }
     
-    setLoading(true);
-    setCurrentStep("results");
+    if (!selectedPatient) {
+      setError("No patient selected.");
+      return;
+    }
     
-    // Simulate API call with a timeout
-    setTimeout(() => {
-      // Mock results - in production, these would come from your ML model
-      setResults({
-        timestamp: new Date().toISOString(),
-        patientId: selectedPatient.id,
-        predictions: {
-          tuberculosis: Math.random() * 0.5, // Random values for demonstration
-          cardiomegaly: Math.random() * 0.7,
-          pulmonaryHypertension: Math.random() * 0.4,
-          pneumonia: Math.random() * 0.6
-        }
+    setLoading(true);
+    setError("");
+    
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('patient_id', selectedPatient.id);
+      formData.append('xray_image', imageFile);
+
+      // Make API call to backend
+      const response = await api.post('/api/ml/predict/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
+
+      if (response.data.success) {
+        // Transform backend response to match frontend expectations
+        const backendData = response.data.data;
+        const transformedResults = {
+          timestamp: backendData.created_at,
+          patientId: selectedPatient.id,
+          predictionId: backendData.id,
+          predictions: backendData.all_predictions || {},
+          predictedDisease: backendData.predicted_disease,
+          confidenceScore: backendData.confidence_score,
+          xrayImageUrl: backendData.xray_image
+        };
+
+        setResults(transformedResults);
+        setCurrentStep("results");
+      } else {
+        throw new Error(response.data.message || 'Prediction failed');
+      }
+    } catch (err) {
+      console.error('Prediction error:', err);
+      let errorMessage = 'An error occurred during prediction.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const handleReset = () => {
     setCurrentStep("selectPatient");
     setSelectedPatient(null);
-    setImage(null);
+    setImageFile(null);
+    setImagePreview(null);
     setResults(null);
     setError("");
   };
@@ -119,7 +154,7 @@ const UploadXrayPage = () => {
   const handleDownload = () => {
     if (!results || !selectedPatient) return;
     
-    // Create report content
+    // Create report content using real backend data
     const reportContent = `
 X-Ray Analysis Report
 Date: ${new Date(results.timestamp).toLocaleString()}
@@ -128,19 +163,22 @@ Patient Name: ${selectedPatient.name}
 Age: ${selectedPatient.age}
 Gender: ${selectedPatient.gender}
 
-Diagnosis Probabilities:
-- Tuberculosis: ${(results.predictions.tuberculosis * 100).toFixed(1)}%
-- Cardiomegaly: ${(results.predictions.cardiomegaly * 100).toFixed(1)}%
-- Pulmonary Hypertension: ${(results.predictions.pulmonaryHypertension * 100).toFixed(1)}%
-- Pneumonia: ${(results.predictions.pneumonia * 100).toFixed(1)}%
+Primary Diagnosis: ${results.predictedDisease}
+Confidence Score: ${(results.confidenceScore * 100).toFixed(1)}%
+
+Detailed Probabilities:
+${Object.entries(results.predictions || {})
+  .map(([disease, prob]) => `- ${disease.charAt(0).toUpperCase() + disease.slice(1)}: ${(prob * 100).toFixed(1)}%`)
+  .join('\n')}
+
+Note: This AI analysis is meant to assist medical professionals and should not replace clinical judgment.
     `;
     
-    // Create a blob and download link
     const blob = new Blob([reportContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `xray-report-${selectedPatient.id}.txt`;
+    a.download = `xray-report-${selectedPatient.id}-${new Date().toISOString().split('T')[0]}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -156,9 +194,15 @@ Diagnosis Probabilities:
 
   // Get color class based on probability
   const getRiskColorClass = (probability) => {
-    if (probability < 0.2) return "bg-green-100 text-green-800";
-    if (probability < 0.5) return "bg-yellow-100 text-yellow-800";
-    return "bg-red-100 text-red-800";
+    if (isDarkMode) {
+      if (probability < 0.2) return "bg-green-900/50 text-green-300";
+      if (probability < 0.5) return "bg-yellow-900/50 text-yellow-300";
+      return "bg-red-900/50 text-red-300";
+    } else {
+      if (probability < 0.2) return "bg-green-100 text-green-800";
+      if (probability < 0.5) return "bg-yellow-100 text-yellow-800";
+      return "bg-red-100 text-red-800";
+    }
   };
 
   // Animation variants
@@ -212,7 +256,7 @@ Diagnosis Probabilities:
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-900'}`}>
-      {fullScreen && image && (
+      {fullScreen && imagePreview && (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -237,7 +281,7 @@ Diagnosis Probabilities:
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </motion.button>
-            <img src={image} alt="X-ray Full Screen" className="max-h-screen max-w-full object-contain" />
+            <img src={imagePreview} alt="X-ray Full Screen" className="max-h-screen max-w-full object-contain" />
           </motion.div>
         </motion.div>
       )}
@@ -290,7 +334,7 @@ Diagnosis Probabilities:
             })}
           </div>
           
-          {/* Reset button (visible after selecting a patient) */}
+          {/* Reset button */}
           <AnimatePresence>
             {selectedPatient && (
               <motion.button
@@ -312,7 +356,7 @@ Diagnosis Probabilities:
         </div>
         
         {/* Patient selection step */}
-     <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait">
           {currentStep === "selectPatient" && (
             <motion.div
               key="select-patient"
@@ -363,62 +407,72 @@ Diagnosis Probabilities:
                 </motion.div>
               </div>
               
-              <motion.div 
-                variants={itemVariants}
-                className={`border rounded-md overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
-              >
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
-                    <tr>
-                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>ID</th>
-                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Name</th>
-                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Age</th>
-                      <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Gender</th>
-                      <th scope="col" className={`px-6 py-3 text-right text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                    <AnimatePresence>
-                      {filteredPatients.length > 0 ? (
-                        filteredPatients.map((patient, index) => (
-                          <motion.tr 
-                            key={patient.id}
-                            custom={index}
-                            variants={tableRowVariants}
-                            initial={animatePatientList ? "hidden" : "visible"}
-                            animate="visible"
-                            className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+              {patientsLoading ? (
+                <div className="py-12 flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : patientsError ? (
+                <div className="py-12 text-center text-red-600">
+                  {patientsError}
+                </div>
+              ) : (
+                <motion.div 
+                  variants={itemVariants}
+                  className={`border rounded-md overflow-hidden ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}
+                >
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className={`${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                      <tr>
+                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>ID</th>
+                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Name</th>
+                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Age</th>
+                        <th scope="col" className={`px-6 py-3 text-left text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Gender</th>
+                        <th scope="col" className={`px-6 py-3 text-right text-xs font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-500'} uppercase tracking-wider`}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                      <AnimatePresence>
+                        {filteredPatients.length > 0 ? (
+                          filteredPatients.map((patient, index) => (
+                            <motion.tr 
+                              key={patient.id}
+                              custom={index}
+                              variants={tableRowVariants}
+                              initial={animatePatientList ? "hidden" : "visible"}
+                              animate="visible"
+                              className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'}`}
+                            >
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{patient.id}</td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.name}</td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.age}</td>
+                              <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.gender}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleSelectPatient(patient)}
+                                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                  Select
+                                </motion.button>
+                              </td>
+                            </motion.tr>
+                          ))
+                        ) : (
+                          <motion.tr
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
                           >
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{patient.id}</td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.name}</td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.age}</td>
-                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{patient.gender}</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => handleSelectPatient(patient)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                              >
-                                Select
-                              </motion.button>
+                            <td colSpan="5" className={`px-6 py-4 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              No patients found matching "{searchQuery}"
                             </td>
                           </motion.tr>
-                        ))
-                      ) : (
-                        <motion.tr
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                        >
-                          <td colSpan="5" className={`px-6 py-4 text-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                            No patients found matching "{searchQuery}"
-                          </td>
-                        </motion.tr>
-                      )}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-              </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </tbody>
+                  </table>
+                </motion.div>
+              )}
             </motion.div>
           )}
           
@@ -483,7 +537,7 @@ Diagnosis Probabilities:
                         />
                       </motion.label>
                       <div className={`flex-grow px-3 py-2 border border-l-0 ${isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-300' : 'border-gray-300 bg-white text-gray-600'} rounded-r-md text-sm truncate`}>
-                        {image ? "Image selected" : "No file selected"}
+                        {imageFile ? imageFile.name : "No file selected"}
                       </div>
                     </div>
                     <AnimatePresence>
@@ -501,7 +555,7 @@ Diagnosis Probabilities:
                   </div>
                   
                   <AnimatePresence>
-                    {image && (
+                    {imagePreview && (
                       <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -511,7 +565,7 @@ Diagnosis Probabilities:
                       >
                         <div className="relative group">
                           <img 
-                            src={image} 
+                            src={imagePreview} 
                             alt="X-ray Preview" 
                             className="w-full h-auto cursor-pointer" 
                             onClick={() => setFullScreen(true)}
@@ -545,12 +599,12 @@ Diagnosis Probabilities:
                   </AnimatePresence>
                   
                   <motion.button
-                    whileHover={!loading && image ? { scale: 1.02 } : {}}
-                    whileTap={!loading && image ? { scale: 0.98 } : {}}
+                    whileHover={!loading && imageFile ? { scale: 1.02 } : {}}
+                    whileTap={!loading && imageFile ? { scale: 0.98 } : {}}
                     type="submit"
-                    disabled={loading || !image}
+                    disabled={loading || !imageFile}
                     className={`w-full py-3 px-4 rounded-md text-white font-medium text-base ${
-                      loading || !image ? "bg-blue-400 dark:bg-blue-500/50 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-md"
+                      loading || !imageFile ? "bg-blue-400 dark:bg-blue-500/50 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-md"
                     }`}
                   >
                     {loading ? (
@@ -618,7 +672,7 @@ Diagnosis Probabilities:
                   ))}
                 </div>
                 
-                {image && (
+                {imagePreview && (
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -627,7 +681,7 @@ Diagnosis Probabilities:
                   >
                     <div className="relative group">
                       <img 
-                        src={image} 
+                        src={imagePreview} 
                         alt="X-ray" 
                         className="w-full h-auto cursor-pointer" 
                         onClick={() => setFullScreen(true)}
@@ -691,19 +745,12 @@ Diagnosis Probabilities:
                         {Object.entries(results.predictions).map(([condition, probability], index) => {
                           const percent = probability * 100;
                           const riskLevel = getRiskLevel(probability);
-                          // Adjusted color classes for dark mode
-                          let colorClass = '';
-                          if (isDarkMode) {
-                            if (probability < 0.2) colorClass = "bg-green-900/50 text-green-300";
-                            else if (probability < 0.5) colorClass = "bg-yellow-900/50 text-yellow-300";
-                            else colorClass = "bg-red-900/50 text-red-300";
-                          } else {
-                            colorClass = getRiskColorClass(probability);
-                          }
+                          const colorClass = getRiskColorClass(probability);
                           
                           const formattedCondition = condition
                             .replace(/([A-Z])/g, ' $1')
-                            .replace(/^./, str => str.toUpperCase());
+                            .replace(/^./, str => str.toUpperCase())
+                            .replace(/_/g, ' ');
                           
                           return (
                             <motion.div 
@@ -755,6 +802,14 @@ Diagnosis Probabilities:
                       transition={{ delay: 0.8 }}
                       className={`${isDarkMode ? 'bg-blue-900/20 border-blue-800/50 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'} p-4 rounded-md border`}
                     >
+                      <h3 className={`text-lg font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-800'} mb-2`}>Primary Diagnosis</h3>
+                      <p className="mb-2">
+                        <span className="font-medium">Disease:</span> {results.predictedDisease?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </p>
+                      <p className="mb-4">
+                        <span className="font-medium">Confidence:</span> {(results.confidenceScore * 100).toFixed(1)}%
+                      </p>
+                      
                       <h3 className={`text-lg font-medium ${isDarkMode ? 'text-blue-300' : 'text-blue-800'} mb-2`}>Recommendations</h3>
                       <p>
                         Based on the analysis, this patient should be evaluated by a specialist 
