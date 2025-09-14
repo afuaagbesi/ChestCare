@@ -19,6 +19,10 @@ const UploadXrayPage = () => {
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(true);
   const [patientsError, setPatientsError] = useState("");
+  const [gradcamLoading, setGradcamLoading] = useState(false);
+  const [gradcamError, setGradcamError] = useState("");
+  const [showGradcam, setShowGradcam] = useState(false);
+  const [gradcamImage, setGradcamImage] = useState(null);
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -79,6 +83,64 @@ const UploadXrayPage = () => {
     }
   };
 
+  // Fixed fetchGradcamImage function with proper authentication
+  const fetchGradcamImage = async (predictionId) => {
+    try {
+      setGradcamLoading(true);
+      setGradcamError("");
+      
+      // Use the authenticated axios instance to fetch as blob
+      const response = await api.get(`/api/ml/predictions/${predictionId}/gradcam/`, {
+        responseType: 'blob'
+      });
+      
+      // Create object URL from blob
+      const gradcamUrl = URL.createObjectURL(response.data);
+      setGradcamImage(gradcamUrl);
+      setShowGradcam(true);
+    } catch (error) {
+      console.error('Error loading Grad-CAM:', error);
+      if (error.response?.status === 401) {
+        setGradcamError("Authentication failed. Please log in again.");
+      } else if (error.response?.status === 404) {
+        setGradcamError("Grad-CAM visualization not available for this prediction");
+      } else {
+        setGradcamError("Failed to load Grad-CAM visualization");
+      }
+    } finally {
+      setGradcamLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (gradcamImage && gradcamImage.startsWith('blob:')) {
+        URL.revokeObjectURL(gradcamImage);
+      }
+    };
+  }, [gradcamImage]);
+
+  const regenerateGradcam = async (predictionId) => {
+    try {
+      setGradcamLoading(true);
+      setGradcamError("");
+      
+      const response = await api.post(`/api/ml/predictions/${predictionId}/regenerate-gradcam/`);
+      
+      if (response.data.success) {
+        // Fetch the new Grad-CAM image
+        await fetchGradcamImage(predictionId);
+      } else {
+        throw new Error(response.data.message || 'Failed to regenerate Grad-CAM');
+      }
+    } catch (error) {
+      console.error('Error regenerating Grad-CAM:', error);
+      setGradcamError("Failed to regenerate Grad-CAM visualization");
+      setGradcamLoading(false);
+    }
+  };
+
+  // Fixed handleSubmit function without manual URL construction
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -118,10 +180,18 @@ const UploadXrayPage = () => {
           predictions: backendData.all_predictions || {},
           predictedDisease: backendData.predicted_disease,
           confidenceScore: backendData.confidence_score,
-          xrayImageUrl: backendData.xray_image
+          xrayImageUrl: backendData.xray_image,
+          gradcamAvailable: response.data.gradcam_available || !!backendData.gradcam_image
         };
 
         setResults(transformedResults);
+        
+        // Don't manually construct URL - let fetchGradcamImage handle it
+        if (response.data.gradcam_available && backendData.id) {
+          // Automatically fetch Grad-CAM after successful prediction
+          await fetchGradcamImage(backendData.id);
+        }
+        
         setCurrentStep("results");
       } else {
         throw new Error(response.data.message || 'Prediction failed');
@@ -142,6 +212,28 @@ const UploadXrayPage = () => {
     }
   };
 
+  // Function to fetch Grad-CAM for different diseases
+  const fetchGradcamForDisease = async (predictionId, diseaseType) => {
+    try {
+      setGradcamLoading(true);
+      setGradcamError("");
+      
+      // If you want to generate Grad-CAM for a specific disease
+      const response = await api.get(`/api/ml/predictions/${predictionId}/gradcam/?disease=${diseaseType}`, {
+        responseType: 'blob'
+      });
+      
+      const gradcamUrl = URL.createObjectURL(response.data);
+      setGradcamImage(gradcamUrl);
+      setShowGradcam(true);
+    } catch (error) {
+      console.error('Error loading Grad-CAM:', error);
+      setGradcamError(`Failed to load Grad-CAM for ${diseaseType}`);
+    } finally {
+      setGradcamLoading(false);
+    }
+  };
+
   const handleReset = () => {
     setCurrentStep("selectPatient");
     setSelectedPatient(null);
@@ -149,6 +241,10 @@ const UploadXrayPage = () => {
     setImagePreview(null);
     setResults(null);
     setError("");
+    setGradcamImage(null);
+    setGradcamError("");
+    setShowGradcam(false);
+    setGradcamLoading(false);
   };
 
   const handleDownload = () => {
@@ -286,6 +382,127 @@ Note: This AI analysis is meant to assist medical professionals and should not r
         </motion.div>
       )}
       
+      {/* Enhanced Grad-CAM Modal */}
+      {showGradcam && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" 
+          onClick={() => setShowGradcam(false)}
+        >
+          <motion.div 
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="relative max-w-6xl max-h-full bg-white dark:bg-gray-800 rounded-lg overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Grad-CAM Visualization
+                </h3>
+                {/* Disease selector if you have multiple models */}
+                {results?.predictions && Object.keys(results.predictions).length > 1 && (
+                  <select 
+                    value={results.predictedDisease} 
+                    onChange={(e) => {
+                      fetchGradcamForDisease(results.predictionId, e.target.value);
+                    }}
+                    className="mt-2 p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                  >
+                    {Object.keys(results.predictions).map(disease => (
+                      <option key={disease} value={disease}>
+                        {disease.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <motion.button 
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                onClick={() => setShowGradcam(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </motion.button>
+            </div>
+            
+            <div className="p-4">
+              {gradcamLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              ) : gradcamError ? (
+                <div className="text-center p-8 text-red-600">
+                  <p>{gradcamError}</p>
+                  <button 
+                    onClick={() => fetchGradcamImage(results?.predictionId)}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Original X-ray</h4>
+                    <img src={imagePreview} alt="Original X-ray" className="w-full h-auto rounded border" />
+                  </div>
+                  <div>
+
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Grad-CAM Heatmap - {(results?.currentViewedDisease || results?.predictedDisease)?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </h4>
+                    {gradcamImage ? (
+                      <img src={gradcamImage} alt="Grad-CAM Visualization" className="w-full h-auto rounded border" />
+                    ) : (
+                      <div className="w-full h-64 bg-gray-100 dark:bg-gray-700 rounded border flex items-center justify-center">
+                        <p className="text-gray-500">No Grad-CAM available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-1">What is Grad-CAM?</h4>
+                <p className="text-xs text-blue-700 dark:text-blue-400">
+                  Grad-CAM (Gradient-weighted Class Activation Mapping) highlights the regions of the X-ray 
+                  that most influenced the AI's decision for {results?.predictedDisease?.replace(/_/g, ' ')}. 
+                  Red/warm areas indicate high attention, while blue/cool areas indicate low attention.
+                </p>
+              </div>
+              
+              <div className="mt-4 flex justify-end space-x-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => regenerateGradcam(results?.predictionId)}
+                  disabled={gradcamLoading}
+                  className="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50"
+                >
+                  {gradcamLoading ? 'Regenerating...' : 'Regenerate'}
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowGradcam(false)}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Close
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+
       <main className="max-w-6xl mx-auto p-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 space-y-4 md:space-y-0">
           <motion.h1 
@@ -636,19 +853,57 @@ Note: This AI analysis is meant to assist medical professionals and should not r
                 variants={itemVariants}
                 className={`lg:col-span-1 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6`}
               >
-                <div className="mb-4 flex justify-between items-center">
+                <div className="mb-4 flex justify-between items-start space-x-2">
                   <h2 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Patient Information</h2>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleDownload}
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  >
-                    <svg className="-ml-0.5 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Download Report
-                  </motion.button>
+                  <div className="flex flex-col space-y-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={handleDownload}
+                      className="inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      <svg className="-ml-0.5 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Download
+                    </motion.button>
+
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (gradcamImage) {
+                          setShowGradcam(true);
+                        } else if (results?.predictionId) {
+                          fetchGradcamImage(results.predictionId);
+                        }
+                      }}
+                      disabled={gradcamLoading}
+                      className={`inline-flex items-center px-3 py-2 border border-transparent shadow-sm text-xs font-medium rounded-md text-white ${
+                        gradcamLoading 
+                          ? 'bg-purple-400 cursor-not-allowed' 
+                          : 'bg-purple-600 hover:bg-purple-700'
+                      } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500`}
+                    >
+                      {gradcamLoading ? (
+                        <>
+                          <svg className="animate-spin -ml-0.5 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="-ml-0.5 mr-1 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          AI Focus
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
                 </div>
                 
                 <div className="space-y-3 mb-6">
@@ -719,7 +974,22 @@ Note: This AI analysis is meant to assist medical professionals and should not r
                 className={`lg:col-span-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-md p-6`}
               >
                 <h2 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Analysis Results</h2>
-                
+                  
+                <AnimatePresence>
+                  {gradcamError && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md"
+                    >
+                      <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        {gradcamError}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 {loading ? (
                   <motion.div 
                     initial={{ opacity: 0 }}
