@@ -4,7 +4,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement,
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { motion } from "framer-motion";
-import { FaHeart, FaStethoscope, FaThermometer, FaLungs, FaCalendarAlt, FaChartLine, FaChartBar, FaFilter, FaInfoCircle } from "react-icons/fa";
+import { FaHeart, FaStethoscope, FaThermometer, FaLungs, FaCalendarAlt, FaChartLine, FaChartBar, FaFilter, FaInfoCircle, FaPlus } from "react-icons/fa";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.css";
 import {
@@ -20,6 +20,10 @@ import {
   Col
 } from "@tremor/react";
 import { useDarkMode } from "../contexts/DarkModeContext";
+import AppointmentBooking from '../components/AppointmentBooking';
+import AppointmentCard from '../components/AppointmentCard'; // New import
+import { useAppointments } from '../hooks/useAppointments'; // New import
+import AppointmentCompletionModal from '../components/AppointmentCompletionModal';
 
 // Registering chart components
 ChartJS.register(
@@ -35,6 +39,22 @@ ChartJS.register(
 
 function DoctorDashboardPage() {
   const { isDarkMode } = useDarkMode();
+  
+  // Use the new appointments hook
+  const {
+    appointments,
+    todayAppointments,
+    upcomingAppointments,
+    loading: appointmentsLoading,
+    error: appointmentsError,
+    fetchAppointments,
+    fetchTodayAppointments,
+    fetchUpcomingAppointments,
+    cancelAppointment,
+    rescheduleAppointment,
+    completeAppointment
+  } = useAppointments();
+
   const [patientStats, setPatientStats] = useState({
     cardiomegaly: 0,
     pneumonia: 0,
@@ -45,8 +65,79 @@ function DoctorDashboardPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedMonth, setSelectedMonth] = useState("All");
   const [selectedDisease, setSelectedDisease] = useState("cardiomegaly");
-  
+  const [showAppointmentBooking, setShowAppointmentBooking] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+const [selectedAppointmentForCompletion, setSelectedAppointmentForCompletion] = useState(null);
+
   const months = ["All", "January", "February", "March", "April", "May", "June"];
+
+  // Fetch appointments on component mount and when date changes
+  useEffect(() => {
+    fetchUpcomingAppointments(30); // Fetch appointments for next 30 days
+    fetchTodayAppointments();
+  }, []);
+
+  // Filter appointments based on selected date
+  const filteredAppointments = useMemo(() => {
+    if (!upcomingAppointments.length) return [];
+    
+    return upcomingAppointments.filter(appointment => {
+      const appointmentDate = new Date(appointment.date);
+      const matchesDate = selectedDate ? 
+        appointmentDate.toDateString() === selectedDate.toDateString() : 
+        true;
+      
+      return matchesDate;
+    });
+  }, [upcomingAppointments, selectedDate]);
+
+  // Handle successful appointment creation
+  const handleAppointmentSuccess = (appointment) => {
+    console.log('New appointment created:', appointment);
+    
+    // Refresh appointments
+    fetchUpcomingAppointments(30);
+    fetchTodayAppointments();
+    setShowAppointmentBooking(false);
+  };
+
+  // Handle appointment cancellation
+  const handleCancelAppointment = async (appointmentId) => {
+    const confirmCancel = window.confirm('Are you sure you want to cancel this appointment?');
+    if (confirmCancel) {
+      const result = await cancelAppointment(appointmentId, 'Cancelled by doctor');
+      if (result.success) {
+        alert('Appointment cancelled successfully');
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    }
+  };
+
+  // Handle appointment rescheduling
+  const handleRescheduleAppointment = async (appointmentId, newDate, newTime, notes) => {
+    return await rescheduleAppointment(appointmentId, newDate, newTime, notes);
+  };
+
+// Handle appointment completion
+const handleCompleteAppointment = async (appointmentId) => {
+  const appointment = filteredAppointments.find(apt => apt.id === appointmentId);
+  setSelectedAppointmentForCompletion(appointment);
+  setShowCompletionModal(true);
+};
+
+// Handle modal completion submission
+const handleModalCompletion = async (appointmentId, completionData) => {
+  const result = await completeAppointment(appointmentId, completionData.notes);
+  if (result.success) {
+    alert('Appointment marked as completed');
+    setShowCompletionModal(false);
+    setSelectedAppointmentForCompletion(null);
+  } else {
+    alert(`Error: ${result.error}`);
+    throw new Error(result.error);
+  }
+};
 
   // Disease facts content
   const diseaseFacts = {
@@ -152,27 +243,6 @@ function DoctorDashboardPage() {
       ],
     };
   }, [selectedMonth]);
-
-  const [schedule] = useState([
-    { date: "2025-03-21", task: "Patient Checkup: Cardiomegaly", type: "cardiomegaly" },
-    { date: "2025-03-22", task: "Patient Checkup: Pneumonia", type: "pneumonia" },
-    { date: "2025-03-23", task: "Patient Checkup: Tuberculosis", type: "tuberculosis" },
-    { date: "2025-03-24", task: "Patient Checkup: Pulmonary Hypertension", type: "pulmonary" },
-    { date: "2025-03-25", task: "Follow-up: Cardiomegaly", type: "cardiomegaly" },
-    { date: "2025-03-26", task: "New Patient: Pneumonia", type: "pneumonia" },
-  ]);
-
-  // Filter appointments based on selected date
-  const filteredAppointments = useMemo(() => {
-    return schedule.filter(appointment => {
-      const appointmentDate = new Date(appointment.date);
-      const matchesDate = selectedDate ? 
-        appointmentDate.toDateString() === selectedDate.toDateString() : 
-        true;
-      
-      return matchesDate;
-    });
-  }, [schedule, selectedDate]);
 
   // Update patient stats based on selected month
   useEffect(() => {
@@ -492,29 +562,6 @@ const tabOverrideStyles = `
   }
 `;
 
-// Add this after your existing calendarStyles, around line 200:
-const tabStyles = `
-  .react-tabs__tab--selected {
-    background-color: ${isDarkMode ? '#374151 !important' : '#2563eb !important'};
-    color: white !important;
-    border-color: ${isDarkMode ? '#3b82f6 !important' : '#2563eb !important'};
-  }
-  
-  .react-tabs__tab--selected:hover {
-    background-color: ${isDarkMode ? '#4b5563 !important' : '#1d4ed8 !important'};
-  }
-  
-  .react-tabs__tab {
-    background-color: ${isDarkMode ? 'rgba(31, 41, 55, 0.8) !important' : '#f3f4f6 !important'};
-    color: ${isDarkMode ? '#d1d5db !important' : '#374151 !important'};
-    border: none !important;
-  }
-  
-  .react-tabs__tab:hover {
-    background-color: ${isDarkMode ? 'rgba(59, 130, 246, 0.3) !important' : '#dbeafe !important'};
-  }
-`;
-
   // Doctor name could come from a global state, context, or prop
   const doctorName = "Smith";
   
@@ -554,9 +601,19 @@ const tabStyles = `
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center mb-4">
-            <FaCalendarAlt className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} text-xl mr-2`} />
-            <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Doctor's Schedule</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <FaCalendarAlt className={`${isDarkMode ? 'text-blue-400' : 'text-blue-600'} text-xl mr-2`} />
+              <h3 className={`text-xl font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Doctor's Schedule</h3>
+            </div>
+            <button
+              onClick={() => setShowAppointmentBooking(true)}
+              className={`flex items-center px-3 py-2 rounded-lg ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white transition-colors text-sm`}
+              title="Book New Appointment"
+            >
+              <FaPlus className="mr-1" />
+              Book
+            </button>
           </div>
           
           <Calendar 
@@ -565,25 +622,45 @@ const tabStyles = `
             value={selectedDate}
           />
           
+          {/* Updated Appointments List Section */}
           <div className="mt-5">
             <div className="mb-4">
-              <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Upcoming Appointments</h4>
+              <h4 className={`text-lg font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                {selectedDate ? `Appointments for ${selectedDate.toDateString()}` : 'Upcoming Appointments'}
+              </h4>
+              {appointmentsLoading && (
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Loading appointments...</p>
+              )}
+              {appointmentsError && (
+                <p className="text-sm text-red-500">{appointmentsError}</p>
+              )}
             </div>
             
             {/* Appointments List */}
-            <div className="overflow-y-auto max-h-64 mb-0 pb-0">
+            <div className="space-y-3 max-h-80 overflow-y-auto">
               {filteredAppointments.length > 0 ? (
-                filteredAppointments.map((item, index) => (
-                  <div key={index} className={`flex items-center p-3 rounded-lg mb-2 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-50 hover:bg-gray-100'} transition-colors duration-200`}>
-                    {diseaseIcons[item.type] || <FaCalendarAlt className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mr-2`} />}
-                    <div>
-                      <div className={`font-medium ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>{item.task}</div>
-                      <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{item.date}</div>
-                    </div>
-                  </div>
+                filteredAppointments.map((appointment) => (
+                  <AppointmentCard
+                    key={appointment.id}
+                    appointment={appointment}
+                    isDarkMode={isDarkMode}
+                    onCancel={handleCancelAppointment}
+                    onReschedule={handleRescheduleAppointment}
+                    onComplete={handleCompleteAppointment}
+                    showActions={true}
+                  />
                 ))
               ) : (
-                <div className={`text-center py-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>No appointments found</div>
+                <div className={`text-center py-8 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <FaCalendarAlt className="mx-auto text-3xl mb-2 opacity-50" />
+                  <p>No appointments found for selected date</p>
+                  <button
+                    onClick={() => setShowAppointmentBooking(true)}
+                    className={`mt-2 px-4 py-2 rounded-lg ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white transition-colors text-sm`}
+                  >
+                    Schedule New Appointment
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -591,7 +668,7 @@ const tabStyles = `
 
         {/* Disease Statistics and Cases */}
         <motion.div
-          className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-blue border-gray-100'} p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 col-span-1 lg:col-span-2 border`}
+          className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'} p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 col-span-1 lg:col-span-2 border`}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -769,53 +846,77 @@ const tabStyles = `
         </div>
       </motion.div>
 
-      {/* Rest of the dashboard content */}
-      <Grid numItemsMd={2} numItemsLg={3} className="gap-6 mb-6">
-        <Card className="dark:bg-dark-card">
-          <Flex>
-            <div>
-              <Title>Total Patients</Title>
-              <Metric>1,234</Metric>
-            </div>
-            <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-            </div>
-          </Flex>
-          <Text className="mt-4">7% increase from last month</Text>
-        </Card>
-        
-        <Card className="dark:bg-dark-card">
-          <Flex>
-            <div>
-              <Title>Analyzed X-rays</Title>
-              <Metric>2,862</Metric>
-            </div>
-            <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-          </Flex>
-          <Text className="mt-4">12% increase from last month</Text>
-        </Card>
-        
-        <Card className="dark:bg-dark-card">
-          <Flex>
-            <div>
-              <Title>Detection Rate</Title>
-              <Metric>94.3%</Metric>
-            </div>
-            <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-          </Flex>
-          <Text className="mt-4">2.4% increase from last month</Text>
-        </Card>
-      </Grid>
+      {/* Statistics Cards Section */}
+      <div className="px-6 pb-6">
+        <Grid numItemsMd={2} numItemsLg={3} className="gap-6 mb-6">
+          <Card className="dark:bg-dark-card">
+            <Flex>
+              <div>
+                <Title>Total Patients</Title>
+                <Metric>1,234</Metric>
+              </div>
+              <div className="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </Flex>
+            <Text className="mt-4">7% increase from last month</Text>
+          </Card>
+          
+          <Card className="dark:bg-dark-card">
+            <Flex>
+              <div>
+                <Title>Analyzed X-rays</Title>
+                <Metric>2,862</Metric>
+              </div>
+              <div className="w-14 h-14 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+            </Flex>
+            <Text className="mt-4">12% increase from last month</Text>
+          </Card>
+          
+          <Card className="dark:bg-dark-card">
+            <Flex>
+              <div>
+                <Title>Detection Rate</Title>
+                <Metric>94.3%</Metric>
+              </div>
+              <div className="w-14 h-14 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+            </Flex>
+            <Text className="mt-4">2.4% increase from last month</Text>
+          </Card>
+        </Grid>
+      </div>
+
+      {/* Appointment Booking Modal */}
+      {showAppointmentBooking && (
+        <AppointmentBooking
+          isDarkMode={isDarkMode}
+          onClose={() => setShowAppointmentBooking(false)}
+          onSuccess={handleAppointmentSuccess}
+        />
+      )}
+      {/* Appointment Completion Modal */}
+        {showCompletionModal && selectedAppointmentForCompletion && (
+          <AppointmentCompletionModal
+            isOpen={showCompletionModal}
+            onClose={() => {
+              setShowCompletionModal(false);
+              setSelectedAppointmentForCompletion(null);
+            }}
+            onComplete={handleModalCompletion}
+            appointment={selectedAppointmentForCompletion}
+            isDarkMode={isDarkMode}
+          />
+        )}
     </div>
   );
 }

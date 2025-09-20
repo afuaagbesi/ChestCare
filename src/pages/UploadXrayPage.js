@@ -186,11 +186,6 @@ const UploadXrayPage = () => {
 
         setResults(transformedResults);
         
-        // Don't manually construct URL - let fetchGradcamImage handle it
-        if (response.data.gradcam_available && backendData.id) {
-          // Automatically fetch Grad-CAM after successful prediction
-          await fetchGradcamImage(backendData.id);
-        }
         
         setCurrentStep("results");
       } else {
